@@ -10,7 +10,12 @@ class Direction(enum.Enum):
     Expenditure = "Expenditure"
     Receivable = "Receivable"  # 應收
     Payable = "Payable"        # 應付
-
+class SortField(enum.Enum):
+    """財務日誌排序欄位"""
+    TIMESTAMP = "timestamp"
+    AMOUNT = "amount"
+    ID = "id"
+    CATEGORY = "category_id"
 class Category(Base):
     __tablename__ = "category"
     id = Column(Integer, primary_key=True)
@@ -73,7 +78,7 @@ class FinanceDB:
             self.session.rollback()
             raise
 
-    # FinanceLog (CRUD / raw queries)
+    # FinanceLog (CRUD)
     def create_log(self, category_id: int, actual_type: Direction | None, amount: float, note: str | None = None, timestamp: datetime | None = None) -> FinanceLog:
         """建立新財務日誌"""
         try:
@@ -88,48 +93,6 @@ class FinanceDB:
             self.session.rollback()
             raise
 
-    def get_all_logs(self) -> list[FinanceLog]:
-        """取得所有財務日誌"""
-        try:
-            return self.session.query(FinanceLog).order_by(FinanceLog.timestamp.desc()).all()
-        except Exception:
-            raise
-
-    def get_logs_by_type(self, direction: Direction) -> list[FinanceLog]:
-        """依交易方向查詢日誌"""
-        try:
-            return self.session.query(FinanceLog).filter(FinanceLog.actual_type == direction).order_by(FinanceLog.timestamp.desc()).all()
-        except Exception:
-            raise
-
-    def get_logs_by_category_id(self, category_id: int) -> list[FinanceLog]:
-        """依類別ID查詢日誌"""
-        try:
-            return self.session.query(FinanceLog).filter(FinanceLog.category_id == category_id).order_by(FinanceLog.timestamp.desc()).all()
-        except Exception:
-            raise
-
-    def get_logs_by_date_range(self, start_date: datetime, end_date: datetime) -> list[FinanceLog]:
-        """依日期範圍查詢日誌"""
-        try:
-            return self.session.query(FinanceLog).filter(FinanceLog.timestamp >= start_date, FinanceLog.timestamp <= end_date).order_by(FinanceLog.timestamp.desc()).all()
-        except Exception:
-            raise
-
-    def get_logs_by_amount_range(self, min_amount: float, max_amount: float) -> list[FinanceLog]:
-        """依金額範圍查詢日誌"""
-        try:
-            return self.session.query(FinanceLog).filter(FinanceLog.amount >= min_amount, FinanceLog.amount <= max_amount).order_by(FinanceLog.timestamp.desc()).all()
-        except Exception:
-            raise
-
-    def get_logs_by_note_keyword(self, keyword: str) -> list[FinanceLog]:
-        """依備註關鍵字查詢日誌"""
-        try:
-            return self.session.query(FinanceLog).filter(FinanceLog.note.ilike(f"%{keyword}%")).order_by(FinanceLog.timestamp.desc()).all()
-        except Exception:
-            raise
-
     def get_log_by_id(self, log_id: int) -> FinanceLog | None:
         """依ID查詢單筆日誌"""
         try:
@@ -137,17 +100,52 @@ class FinanceDB:
         except Exception:
             raise
 
-    def close(self):
-        """關閉資料庫連接"""
+    def get_logs_with_sorting(self, sort_by: SortField = SortField.TIMESTAMP, reverse: bool = True, filters: dict | None = None) -> list[FinanceLog]:
+        """取得排序後的日誌（支援多重條件過濾）
+        
+        Args:
+            sort_by: 排序欄位（SortField 列舉）
+            reverse: 是否降序排列
+            filters: 過濾條件字典
+        """
         try:
-            self.session.close()
-        except Exception:
+            # 基礎查詢
+            query = self.session.query(FinanceLog)
+
+            # 套用過濾條件
+            if filters:
+                if 'category_id' in filters:
+                    query = query.filter(FinanceLog.category_id == filters['category_id'])
+                if 'actual_type' in filters:
+                    query = query.filter(FinanceLog.actual_type == filters['actual_type'])
+                if 'min_amount' in filters:
+                    query = query.filter(FinanceLog.amount >= filters['min_amount'])
+                if 'max_amount' in filters:
+                    query = query.filter(FinanceLog.amount <= filters['max_amount'])
+                if 'start_date' in filters:
+                    query = query.filter(FinanceLog.timestamp >= filters['start_date'])
+                if 'end_date' in filters:
+                    query = query.filter(FinanceLog.timestamp <= filters['end_date'])
+                if 'note_keyword' in filters:
+                    query = query.filter(FinanceLog.note.ilike(f"%{filters['note_keyword']}%"))
+
+            # 排序
+            sort_column = getattr(FinanceLog, sort_by.value)
+            query = query.order_by(sort_column.desc() if reverse else sort_column.asc())
+
+            return query.all()
+        except Exception as e:
+            print(f"排序查詢時發生錯誤：{str(e)}")
             raise
 
 class FinanceService:
-    """邏輯層：使用 FinanceDB 提供高階功能，回傳 dict / 統計 / 排序等。"""
+    """邏輯層：使用 FinanceDB 提供高階功能，處理商業邏輯並回傳格式化資料"""
     def __init__(self, db: FinanceDB):
         self.db = db
+
+    def close(self):
+        """關閉資料庫連接"""
+        self.db.close()
 
     def _log_to_dict(self, l: FinanceLog) -> dict:
         """轉換日誌為字典格式"""
@@ -161,7 +159,7 @@ class FinanceService:
             "timestamp": (l.timestamp.isoformat() if l.timestamp else None),
         }
 
-    # Category helpers (high-level)
+    # Category 高階功能
     def add_category(self, name: str, default_type: Direction) -> dict:
         """新增類別（高階功能）"""
         if not name or not isinstance(name, str):
@@ -180,8 +178,8 @@ class FinanceService:
             return False
         return self.db.delete_category_by_id(cat.id)
 
-    # Log helpers (high-level)
-    def add_log(self, category_name: str, amount: float, actual_type: Direction | None = None, note: str | None = None) -> dict:
+    # Log 高階功能
+    def add_log(self, category_name: str, amount: float, actual_type: Direction | None = None, note: str | None = None, actuall_time: datetime | None = None) -> dict:
         """新增財務日誌（高階功能）"""
         if not category_name or not isinstance(category_name, str):
             raise ValueError("category_name 必須為非空字串")
@@ -191,59 +189,65 @@ class FinanceService:
             raise ValueError("actual_type 必須為 Direction 或 None")
         if note is not None and not isinstance(note, str):
             raise ValueError("note 必須為字串或 None")
+        if actuall_time is not None and not isinstance(actuall_time, datetime):
+            raise ValueError("actuall_time 必須為 datetime 或 None")
 
         cat = self.db.get_category_by_name(category_name)
         if not cat:
             raise ValueError(f"找不到類別 '{category_name}'")
+            
         use_type = actual_type or cat.default_type
-        log = self.db.create_log(category_id=cat.id, actual_type=use_type, amount=amount, note=note)
+        log = self.db.create_log(
+            category_id=cat.id, 
+            actual_type=use_type, 
+            amount=amount, 
+            note=note,
+            timestamp=actuall_time  # 傳遞時間參數給 create_log
+        )
         return self._log_to_dict(log)
-
-    def get_all_logs(self) -> list[dict]:
-        """取得所有日誌（字典格式）"""
-        logs = self.db.get_all_logs()
-        return [self._log_to_dict(l) for l in logs]
-
-    def get_logs_by_category(self, category_name: str) -> list[dict]:
-        """依類別名稱查詢日誌（字典格式）"""
-        cat = self.db.get_category_by_name(category_name)
-        if not cat:
-            return []
-        logs = self.db.get_logs_by_category_id(cat.id)
-        return [self._log_to_dict(l) for l in logs]
-
-    def get_logs_by_date_range(self, start_date: datetime, end_date: datetime) -> list[dict]:
-        """依日期範圍查詢日誌（字典格式）"""
-        if not isinstance(start_date, datetime) or not isinstance(end_date, datetime):
-            raise ValueError("start_date 和 end_date 必須是 datetime")
-        logs = self.db.get_logs_by_date_range(start_date, end_date)
-        return [self._log_to_dict(l) for l in logs]
-
-    def get_logs_by_amount_range(self, min_amount: float, max_amount: float) -> list[dict]:
-        """依金額範圍查詢日誌（字典格式）"""
-        if not isinstance(min_amount, (int, float)) or not isinstance(max_amount, (int, float)):
-            raise ValueError("min_amount / max_amount 必須為數字")
-        logs = self.db.get_logs_by_amount_range(min_amount, max_amount)
-        return [self._log_to_dict(l) for l in logs]
-
-    def get_logs_by_note_keyword(self, keyword: str) -> list[dict]:
-        """依備註關鍵字查詢日誌（字典格式）"""
-        if not isinstance(keyword, str):
-            raise ValueError("keyword 必須為字串")
-        logs = self.db.get_logs_by_note_keyword(keyword)
-        return [self._log_to_dict(l) for l in logs]
-
-    def get_logs_by_type(self, direction: Direction) -> list[dict]:
-        """依交易方向查詢日誌（字典格式）"""
-        if not isinstance(direction, Direction):
-            raise ValueError("direction 必須為 Direction")
-        logs = self.db.get_logs_by_type(direction)
-        return [self._log_to_dict(l) for l in logs]
 
     def get_log_by_id(self, log_id: int) -> dict | None:
         """依ID查詢單筆日誌（字典格式）"""
         log = self.db.get_log_by_id(log_id)
         return self._log_to_dict(log) if log else None
+
+    def get_filtered_and_sorted_logs(self,
+        category_name: str | None = None,
+        direction: Direction | None = None,
+        min_amount: float | None = None,
+        max_amount: float | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+        note_keyword: str | None = None,
+        sort_by: SortField = SortField.TIMESTAMP,
+        reverse: bool = True
+    ) -> list[dict]:
+        """取得過濾並排序後的日誌清單"""
+        # 準備過濾條件
+        filters = {}
+        
+        if category_name:
+            cat = self.db.get_category_by_name(category_name)
+            if not cat:
+                return []
+            filters['category_id'] = cat.id
+
+        if direction:
+            filters['actual_type'] = direction
+        if min_amount is not None:
+            filters['min_amount'] = min_amount
+        if max_amount is not None:
+            filters['max_amount'] = max_amount
+        if start_date:
+            filters['start_date'] = start_date
+        if end_date:
+            filters['end_date'] = end_date
+        if note_keyword:
+            filters['note_keyword'] = note_keyword
+
+        # 取得排序後的日誌
+        logs = self.db.get_logs_with_sorting(sort_by, reverse, filters)
+        return [self._log_to_dict(l) for l in logs]
 
     def get_total_by_type(self) -> dict:
         """計算各交易方向的總金額"""
@@ -254,9 +258,5 @@ class FinanceService:
             result[key] = result.get(key, 0) + (l.amount or 0)
         return result
 
-    def get_logs_sorted(self, by="timestamp", reverse=True) -> list[dict]:
-        """取得排序後的日誌清單"""
-        logs = self.db.get_all_logs()
-        sorted_logs = sorted(logs, key=lambda x: getattr(x, by), reverse=reverse)
-        return [self._log_to_dict(l) for l in sorted_logs]
+
 
