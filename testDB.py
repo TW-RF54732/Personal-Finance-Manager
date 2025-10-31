@@ -9,4 +9,4 @@ myDB = FinanceDB()
 # myDB.add_category("路邊撿到錢",type=CategoryType.Income)
 # myDB.add_category("乞討費",type=CategoryType.Income)
 
-print(myDB.get_category_by_type(CategoryType.Income))
+print(myDB.get_category_by_type(CategoryType.Expenditure))
