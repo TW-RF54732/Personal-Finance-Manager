@@ -16,6 +16,7 @@ class SortField(enum.Enum):
     AMOUNT = "amount"
     ID = "id"
     CATEGORY = "category_id"
+    DIRECTION = "actual_type"  # 新增依交易方向排序
 class Category(Base):
     __tablename__ = "category"
     id = Column(Integer, primary_key=True)
@@ -49,7 +50,10 @@ class FinanceDB:
         except Exception as e:
             print(f"初始化資料庫時發生錯誤：{str(e)}")
             raise
-
+    def close(self):
+        """關閉資料庫連接"""
+        self.session.close()
+        self.engine.dispose()
     # Category (CRUD)
     def create_category(self, name: str, default_type: Direction) -> Category:
         """建立新類別"""
@@ -80,6 +84,13 @@ class FinanceDB:
             return True
         except Exception:
             self.session.rollback()
+            raise
+
+    def get_all_categories(self) -> list[Category]:
+        """取得所有類別"""
+        try:
+            return self.session.query(Category).order_by(Category.name).all()
+        except Exception:
             raise
 
     # FinanceLog (CRUD)
@@ -182,6 +193,10 @@ class FinanceService:
             return False
         return self.db.delete_category_by_id(cat.id)
 
+    def get_all_categories(self) -> list[dict]:
+        """取得所有類別（高階功能）"""
+        cats = self.db.get_all_categories()
+        return [{"id": c.id, "name": c.name, "default_type": c.default_type.value} for c in cats]
     # Log 高階功能
     def add_log(self, category_name: str, amount: float, actual_type: Direction | None = None, note: str | None = None, actuall_time: datetime | None = None) -> dict:
         """新增財務日誌（高階功能）"""
@@ -224,9 +239,25 @@ class FinanceService:
         end_date: datetime | None = None,
         note_keyword: str | None = None,
         sort_by: SortField = SortField.TIMESTAMP,
-        reverse: bool = True
+        reverse: bool = True,
+        limit: int | None = None
     ) -> list[dict]:
-        """取得過濾並排序後的日誌清單"""
+        """取得過濾並排序後的日誌清單
+        
+        Args:
+            category_name: 類別名稱（可選）
+            direction: 交易方向（可選）
+            min_amount: 最小金額（可選）
+            max_amount: 最大金額（可選）
+            start_date: 開始日期（可選）
+            end_date: 結束日期（可選）
+            note_keyword: 備註關鍵字（可選）
+            sort_by: 排序欄位（預設為時間戳記）
+            reverse: 是否降序（預設為是）
+            limit: 限制回傳筆數（可選）
+        Returns:
+            list[dict]: 日誌清單
+        """
         # 準備過濾條件
         filters = {}
         
@@ -251,7 +282,15 @@ class FinanceService:
 
         # 取得排序後的日誌
         logs = self.db.get_logs_with_sorting(sort_by, reverse, filters)
-        return [self._log_to_dict(l) for l in logs]
+        
+        # 轉換為字典格式
+        result = [self._log_to_dict(l) for l in logs]
+        
+        # 如果有指定 limit，只回傳前 N 筆
+        if limit is not None and limit > 0:
+            result = result[:limit]
+            
+        return result
 
     def get_total_by_type(self) -> dict:
         """計算各交易方向的總金額"""
