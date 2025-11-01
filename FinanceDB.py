@@ -36,7 +36,11 @@ class FinanceLog(Base):
 class FinanceDB:
     """資料層：只負責資料存取與基本 CRUD，回傳 ORM 物件或清單。"""
     def __init__(self, db_url="sqlite:///finance.db", echo=False):
-        """初始化資料庫連接"""
+        """初始化資料庫連接
+        
+        Args:
+            db_url: 資料庫連接字串
+            echo: 是否顯示 SQLAlchemy 執行的 SQL 語句"""
         try:
             self.engine = create_engine(db_url, echo=echo)
             Base.metadata.create_all(self.engine)
