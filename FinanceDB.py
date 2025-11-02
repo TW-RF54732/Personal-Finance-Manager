@@ -153,6 +153,88 @@ class FinanceDB:
             print(f"排序查詢時發生錯誤：{str(e)}")
             raise
 
+    def update_category(self, category_id: int, name: str | None = None, default_type: Direction | None = None) -> Category | None:
+        """修改類別
+        
+        Args:
+            category_id: 類別ID
+            name: 新類別名稱（可選）
+            default_type: 新預設交易方向（可選）
+        """
+        try:
+            cat = self.session.query(Category).filter_by(id=category_id).first()
+            if not cat:
+                return None
+                
+            if name is not None:
+                # 檢查新名稱是否已存在（排除自己）
+                existing = self.session.query(Category).filter(
+                    Category.name == name,
+                    Category.id != category_id
+                ).first()
+                if existing:
+                    raise ValueError(f"類別名稱 '{name}' 已存在")
+                cat.name = name
+                
+            if default_type is not None:
+                cat.default_type = default_type
+                
+            self.session.commit()
+            return cat
+        except Exception:
+            self.session.rollback()
+            raise
+
+    def update_log(self,
+        log_id: int,
+        category_id: int | None = None,
+        actual_type: Direction | None = None,
+        amount: float | None = None,
+        note: str | None = None,
+        timestamp: datetime | None = None
+    ) -> FinanceLog | None:
+        """修改財務日誌
+        
+        Args:
+            log_id: 日誌ID
+            category_id: 新類別ID（可選）
+            actual_type: 新實際交易方向（可選）
+            amount: 新金額（可選）
+            note: 新備註（可選）
+            timestamp: 新時間戳記（可選）
+        """
+        try:
+            log = self.session.query(FinanceLog).filter_by(id=log_id).first()
+            if not log:
+                return None
+
+            if category_id is not None:
+                # 確認類別存在
+                cat = self.session.query(Category).filter_by(id=category_id).first()
+                if not cat:
+                    raise ValueError(f"找不到類別ID '{category_id}'")
+                log.category_id = category_id
+                
+            if actual_type is not None:
+                log.actual_type = actual_type
+                
+            if amount is not None:
+                log.amount = amount
+                
+            if note is not None:
+                log.note = note
+                
+            if timestamp is not None:
+                log.timestamp = timestamp
+                
+            self.session.commit()
+            # refresh to populate relationship
+            self.session.refresh(log)
+            return log
+        except Exception:
+            self.session.rollback()
+            raise
+
 class FinanceService:
     """邏輯層：使用 FinanceDB 提供高階功能，處理商業邏輯並回傳格式化資料"""
     def __init__(self, db: FinanceDB):
@@ -300,6 +382,55 @@ class FinanceService:
             key = (l.actual_type.value if l.actual_type else "Unknown")
             result[key] = result.get(key, 0) + (l.amount or 0)
         return result
+
+    def update_category(self, category_id: int, name: str | None = None, default_type: Direction | None = None) -> dict | None:
+        """修改類別（高階功能）"""
+        # 基本驗證
+        if name is not None and (not isinstance(name, str) or not name):
+            raise ValueError("name 必須為非空字串")
+        if default_type is not None and not isinstance(default_type, Direction):
+            raise ValueError("default_type 必須為 Direction")
+            
+        cat = self.db.update_category(category_id, name, default_type)
+        if not cat:
+            return None
+        return {"id": cat.id, "name": cat.name, "default_type": cat.default_type.value}
+
+    def update_log(self,
+        log_id: int,
+        category_name: str | None = None,
+        actual_type: Direction | None = None,
+        amount: float | None = None,
+        note: str | None = None,
+        timestamp: datetime | None = None
+    ) -> dict | None:
+        """修改財務日誌（高階功能）"""
+        # 基本驗證
+        category_id = None
+        if category_name is not None:
+            if not isinstance(category_name, str) or not category_name:
+                raise ValueError("category_name 必須為非空字串")
+            cat = self.db.get_category_by_name(category_name)
+            if not cat:
+                raise ValueError(f"找不到類別 '{category_name}'")
+            category_id = cat.id
+            
+        if actual_type is not None and not isinstance(actual_type, Direction):
+            raise ValueError("actual_type 必須為 Direction")
+            
+        if amount is not None and not isinstance(amount, (int, float)):
+            raise ValueError("amount 必須為數字")
+            
+        if note is not None and not isinstance(note, str):
+            raise ValueError("note 必須為字串")
+            
+        if timestamp is not None and not isinstance(timestamp, datetime):
+            raise ValueError("timestamp 必須為 datetime")
+            
+        log = self.db.update_log(log_id, category_id, actual_type, amount, note, timestamp)
+        if not log:
+            return None
+        return self._log_to_dict(log)
 
 
 
