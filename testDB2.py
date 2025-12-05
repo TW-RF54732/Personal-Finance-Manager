@@ -1,4 +1,4 @@
-from FinanceDB import FinanceDB,FinanceService,Direction,SortField
+from dataBase.FinanceDB import FinanceDB,FinanceService,Direction,SortField
 from datetime import datetime
 from testTool import print_table
 
