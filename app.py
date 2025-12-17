@@ -9,8 +9,8 @@ service = FinanceService(db)
 app = FastAPI()
 
 app.dependency_overrides[DataBaseAPI.get_service] = lambda: service
-app.include_router(api_model_ex.router,prefix='/test',tags=['Test'])
-app.include_router(DataBaseAPI.router,prefix='/database',tags=['database'])
+app.include_router(api_model_ex.router,prefix='api/test',tags=['Test'])
+app.include_router(DataBaseAPI.router,prefix='api/database',tags=['database'])
 
 @app.get('/')
 def index():
