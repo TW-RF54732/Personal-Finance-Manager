@@ -8,8 +8,8 @@ Base = declarative_base()
 class Direction(enum.Enum):
     Income = "Income"
     Expenditure = "Expenditure"
-    Receivable = "Receivable"  # 應收
-    Payable = "Payable"        # 應付
+    # Receivable = "Receivable"  # 應收
+    # Payable = "Payable"        # 應付
 class SortField(enum.Enum):
     """財務日誌排序欄位"""
     TIMESTAMP = "timestamp"
@@ -372,15 +372,6 @@ class FinanceService:
         if limit is not None and limit > 0:
             result = result[:limit]
             
-        return result
-
-    def get_total_by_type(self) -> dict:
-        """計算各交易方向的總金額"""
-        logs = self.db.get_all_logs()
-        result: dict[str, float] = {}
-        for l in logs:
-            key = (l.actual_type.value if l.actual_type else "Unknown")
-            result[key] = result.get(key, 0) + (l.amount or 0)
         return result
 
     def update_category(self, category_id: int, name: str | None = None, default_type: Direction | None = None) -> dict | None:
