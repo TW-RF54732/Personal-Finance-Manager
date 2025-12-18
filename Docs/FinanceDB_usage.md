@@ -171,8 +171,6 @@ print(stats)
 * **排序欄位 (`SortField`)**：系統支援依據 `TIMESTAMP`、`AMOUNT`、`ID`、`CATEGORY` 或 `DIRECTION` 進行排序。
 * **收支定義 (`Direction`)**：固定為 `Income` (收入) 或 `Expenditure` (支出)。
 
-需要我為您示範如何直接呼叫 `FinanceService` 進行一筆複雜的條件過濾查詢嗎？
-
 ### `Direction` (列舉)
 
 * `Direction.Income`: 收入
