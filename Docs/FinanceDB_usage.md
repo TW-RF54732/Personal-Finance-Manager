@@ -1,7 +1,3 @@
-這是一份針對 `FinanceDB.py` 的技術文件與使用指南，採用 Markdown 格式，你可以直接複製到專案的 `README.md` 或開發文件中。
-
----
-
 # FinanceDB 模組使用指南
 
 此模組封裝了基於 SQLAlchemy 的財務資料庫功能，採用 **三層式架構 (Controller -> Service -> Data Access)** 設計。
@@ -131,14 +127,51 @@ print(stats)
 
 ### `FinanceService` (主要操作對象)
 
-| 方法 | 參數重點 | 回傳 | 用途 |
+為了方便開發者查閱，以下將 **`FinanceDB.py`** 中的資料層（`FinanceDB`）與邏輯層（`FinanceService`）的功能進行對照整理。
+
+
+---
+
+#### 1. 類別管理 (Category)
+
+| 功能描述 | 資料層方法 (`FinanceDB`) | 邏輯層方法 (`FinanceService`) | 備註 |
 | --- | --- | --- | --- |
-| `add_category` | `name`, `default_type` (Direction) | `dict` | 新增分類，名稱不可重複。 |
-| `delete_category` | `name` | `bool` | 刪除分類 (會連帶刪除該分類下的所有紀錄)。 |
-| `add_log` | `category_name`, `amount`, `note`, `actual_type` | `dict` | 新增記帳紀錄。 |
-| `get_filtered_and_sorted_logs` | `min/max_amount`, `start/end_date`, `sort_by`, `limit` | `list[dict]` | 萬用查詢與排序接口。 |
-| `get_total_by_type` | 無 | `dict` | 計算各方向 (Income/Expenditure) 總額。 |
-| `update_log` | `log_id`, 及各可選欄位 | `dict` | 修改既有紀錄。 |
+| **新增類別** | `create_category` | `add_category` | 邏輯層會檢查名稱是否重複。 |
+| **取得所有類別** | `get_all_categories` | `get_all_categories` | 依名稱排序回傳清單。 |
+| **名稱查詢** | `get_category_by_name` | (由邏輯層內部私用) | 用於確認類別是否存在。 |
+| **修改類別** | `update_category` | `update_category` | 支援修改名稱與預設收支方向。 |
+| **刪除類別** | `delete_category_by_id` | `delete_category` | 邏輯層提供依名稱刪除的便利性。 |
+
+---
+
+#### 2. 財務日誌管理 (Log)
+
+| 功能描述 | 資料層方法 (`FinanceDB`) | 邏輯層方法 (`FinanceService`) | 備註 |
+| --- | --- | --- | --- |
+| **新增日誌** | `create_log` | `add_log` | 若未提供方向，邏輯層會自動帶入類別預設值。 |
+| **依 ID 查詢** | `get_log_by_id` | `get_log_by_id` | 邏輯層會轉換為 JSON 格式。 |
+| **過濾與排序** | `get_logs_with_sorting` | `get_filtered_and_sorted_logs` | 支援金額區間、日期、關鍵字等多重過濾。 |
+| **修改日誌** | `update_log` | `update_log` | 支援局部更新所有欄位。 |
+
+---
+
+#### 3. 基礎設施與轉換工具
+
+| 功能描述 | 方法名稱 | 所屬類別 | 說明 |
+| --- | --- | --- | --- |
+| **資料庫連線** | `__init__` | `FinanceDB` | 初始化 SQLite 連線並建立資料表。 |
+| **關閉連線** | `close` | 兩者皆有 | 釋放資料庫資源。 |
+| **格式轉換** | `_log_to_dict` | `FinanceService` | 將 ORM 物件格式化為含 ISO 時間字串的字典。 |
+
+---
+
+### 💡 開發重點摘要
+
+* **資料一致性**：`FinanceDB` 的方法均包含 `try...except` 區塊與 `session.rollback()`，確保操作失敗時不會汙染資料庫。
+* **排序欄位 (`SortField`)**：系統支援依據 `TIMESTAMP`、`AMOUNT`、`ID`、`CATEGORY` 或 `DIRECTION` 進行排序。
+* **收支定義 (`Direction`)**：固定為 `Income` (收入) 或 `Expenditure` (支出)。
+
+需要我為您示範如何直接呼叫 `FinanceService` 進行一筆複雜的條件過濾查詢嗎？
 
 ### `Direction` (列舉)
 
