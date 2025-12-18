@@ -25,9 +25,8 @@ git merge 你的命名 #把你的分支融合到主分支
 ```
 # 目前功能簡介
 ## 記帳資料庫 FinanceDB.py
-[FinanceDB說明書](https://github.com/TW-RF54732/Personal-Finance-Manager/blob/main/Docs/FinanceDB_usage.md)
 位於`Personal-Finance-Manager/dataBase`中   
-說明書`FinanceDB_usage.md`位於`Personal-Finance-Manager/Docs`中
+[FinanceDB說明書](https://github.com/TW-RF54732/Personal-Finance-Manager/blob/main/Docs/FinanceDB_usage.md) `FinanceDB_usage.md`位於`Personal-Finance-Manager/Docs`中
 ## 後端
 ### 啟動
 ```
