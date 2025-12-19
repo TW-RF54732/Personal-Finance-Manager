@@ -2,3 +2,5 @@ sqlalchemy
 fastapi
 uvicorn
 pydantic
+llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
+pandas
