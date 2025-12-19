@@ -21,7 +21,7 @@ class FinanceAnalysisEngine:
 
         # 轉換為 DataFrame 進行高效運算
         df = pd.DataFrame(raw_logs)
-        df['timestamp'] = pd.to_datetime(df['timestamp'])
+        df['timestamp'] = pd.to_datetime(df['timestamp'] ,format='ISO8601')
 
         # 2. 核心指標計算
         income_df = df[df['actual_type'] == Direction.Income.value]

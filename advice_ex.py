@@ -17,7 +17,7 @@ def main():
 
     # 3. 執行「LLM 推理」模組
     # 請確保已下載 Qwen2.5-7B-Instruct-Q4_K_M.gguf
-    advisor = FinanceAdvisorLLM(model_path=r"model path")
+    advisor = FinanceAdvisorLLM(model_path=r"D:\Projects\copySoul\copySoul\core\llm\models\L3-8B-Stheno-v3.2-Q5_K_S.gguf")
     advice = advisor.generate_advice(report)
     
     # 4. 輸出結果
