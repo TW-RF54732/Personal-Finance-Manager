@@ -61,8 +61,7 @@ async def get_statistics_report(
     service: FinanceService = Depends(get_service)
 ):
     """
-    僅回傳財務統計數據 (JSON)，不執行 LLM 推理。
-    用途：前端繪製圖表或顯示摘要用，速度極快。
+    回傳財務統計數據 (JSON)
     """
     engine = FinanceAnalysisEngine(service)
     report = engine.get_structured_report(report_args.start_date_time, report_args.end_date_time)
