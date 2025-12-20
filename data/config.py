@@ -1,4 +1,6 @@
 sql_url = 'sqlite:///DB/test.db' #資料庫URL
+goul_path = './data/goal.json'
+
 
 """
 大語言模型設定

@@ -6,7 +6,7 @@ from dataBase.FinanceDB import FinanceDB, FinanceService
 from LLM.analyis import FinanceAnalysisEngine
 from LLM.advice import FinanceAdvisorLLM
 from pydantic import BaseModel
-from config.config import LLM_model_path
+from data.config import LLM_model_path
 router = APIRouter()
 
 class ReportRequest(BaseModel):

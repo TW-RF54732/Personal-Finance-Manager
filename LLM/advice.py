@@ -1,7 +1,7 @@
 import json
 from llama_cpp import Llama
 
-from config.config import n_ctx,system_prompt,temperature,max_tokens
+from data.config import n_ctx,system_prompt,temperature,max_tokens
 
 class FinanceAdvisorLLM:
     def __init__(self, model_path: str, n_threads: int = 8):
