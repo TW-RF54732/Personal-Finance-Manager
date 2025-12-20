@@ -1,10 +1,12 @@
 from fastapi import FastAPI
+
 from api import api_model_ex
 from api import DataBaseAPI
 from api import analyzer
 from dataBase.FinanceDB import FinanceDB,FinanceService
+from config.config import sql_url
 
-db = FinanceDB(db_url="sqlite:///DB/test.db", echo=False)
+db = FinanceDB(db_url=sql_url, echo=False)
 service = FinanceService(db)
 
 app = FastAPI()

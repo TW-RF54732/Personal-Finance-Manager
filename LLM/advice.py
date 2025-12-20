@@ -1,6 +1,8 @@
 import json
 from llama_cpp import Llama
 
+from config.config import n_ctx,system_prompt,temperature,max_tokens
+
 class FinanceAdvisorLLM:
     def __init__(self, model_path: str, n_threads: int = 8):
         """
@@ -10,7 +12,7 @@ class FinanceAdvisorLLM:
         """
         self.llm = Llama(
             model_path=model_path,
-            n_ctx=4096,          # 報告摘要通常在 500-1000 tokens 以內
+            n_ctx=n_ctx,          # 
             n_threads=n_threads, # 建議設為實體核心數
             verbose=False
         )
@@ -24,11 +26,11 @@ class FinanceAdvisorLLM:
         
         response = self.llm.create_chat_completion(
             messages=[
-                {"role": "system", "content": "你是一位專業財務顧問，只提供高效、精確且不廢話的財務洞察。請只用繁體中文"},
+                {"role": "system", "content": system_prompt},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.1,  # 保持一致性
-            max_tokens=800
+            temperature=temperature,  # 保持一致性
+            max_tokens=max_tokens
         )
         return response["choices"][0]["message"]["content"]
 

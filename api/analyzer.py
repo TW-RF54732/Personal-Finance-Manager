@@ -6,7 +6,7 @@ from dataBase.FinanceDB import FinanceDB, FinanceService
 from LLM.analyis import FinanceAnalysisEngine
 from LLM.advice import FinanceAdvisorLLM
 from pydantic import BaseModel
-
+from config.config import LLM_model_path
 router = APIRouter()
 
 class ReportRequest(BaseModel):
@@ -36,7 +36,7 @@ async def generate_analysis_report(  # 建議改名，get_users 容易混淆
 
     # 2. 載入模型 (隨用隨載策略)
     # 建議：將路徑改為配置檔或常數，避免硬編碼
-    model_path = r"D:\Projects\copySoul\copySoul\core\llm\models\L3-8B-Stheno-v3.2-Q5_K_S.gguf"
+    model_path = LLM_model_path
     
     advice_content = ""
     try:
