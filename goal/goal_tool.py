@@ -1,7 +1,7 @@
 import json
 import os
 from datetime import datetime
-from dataBase.FinanceDB import Direction 
+from dataBase.FinanceDB import Direction , FinanceService
 
 REQUIRED_KEYS = {"income", "expenditure", "total_save"}
 
@@ -22,7 +22,7 @@ def read_goal_data(path):
 
     return (income_val, expenditure_val, total_save_val)
 
-def update_goal_data(path, goal_data):
+def update_goal_data(path, goal_data:tuple):
     data = {}
     if os.path.exists(path):
         try:
@@ -41,7 +41,7 @@ def update_goal_data(path, goal_data):
     
     print(f"資料寫入 (Income: {goal_data[0]}, Exp: {goal_data[1]}, Save: {goal_data[2]})")
 
-def calculate_period_stats(service, start_date: datetime, end_date: datetime):
+def calculate_period_stats(service:FinanceService, start_date: datetime, end_date: datetime):
     logs = service.get_filtered_and_sorted_logs(
         start_date=start_date,
         end_date=end_date
