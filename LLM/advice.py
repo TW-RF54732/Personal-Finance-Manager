@@ -1,7 +1,7 @@
 import json
 from llama_cpp import Llama
 
-from data.config import n_ctx,system_prompt,temperature,max_tokens
+from data.config import n_ctx,temperature,max_tokens
 
 class FinanceAdvisorLLM:
     def __init__(self, model_path: str, n_threads: int = 8):
@@ -17,7 +17,7 @@ class FinanceAdvisorLLM:
             verbose=False
         )
 
-    def generate_advice(self, analysis_report: dict) -> str:
+    def generate_advice(self, analysis_report: dict,system_prompt:str) -> str:
         """
         根據分析報告生成建議
         """
@@ -39,7 +39,6 @@ class FinanceAdvisorLLM:
         格式化數據摘要為 Prompt
         """
         return f"""
-        請針對以下財務分析報告提供 3 點具體改善建議。
         
         [財務核心指標]
         - 總收入: {report['metrics']['total_income']}
@@ -53,8 +52,4 @@ class FinanceAdvisorLLM:
         - 異常項目: {report['anomalies']}
         - 高頻消費分類: {report['consumption_behavior']['high_frequency_categories']}
         
-        [要求]
-        1. 找出一個最需要削減的支出類別。
-        2. 提供一個具體的儲蓄目標。
-        3. 語氣專業、極簡。
         """
