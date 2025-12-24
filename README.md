@@ -95,3 +95,47 @@ pip install llama-cpp-python==0.2.90 --extra-index-url https://abetlen.github.io
 python -c "import llama_cpp; print('Llama-cpp installed successfully')"
 
 ```
+
+## 7. LLM 模型準備
+
+本專案使用 `GGUF` 格式模型，請勿下載 PyTorch (`.bin`/`.pth`) 或 Safetensors 格式。
+
+### 步驟 1：建立模型目錄
+
+在專案根目錄建立 `models` 資料夾：
+
+```powershell
+mkdir ./data/models
+
+```
+
+### 步驟 2：下載模型
+
+請前往 Hugging Face 下載 GGUF 模型檔案。
+**推薦模型 (適合財務分析/中文能力佳)：**
+
+* **Llama-3-Taiwan-8B-Instruct-GGUF** (針對台灣繁體中文優化)
+* 下載連結: [nctu6
+/
+Llama3-TAIDE-LX-8B-Chat-Alpha1-GGUF](https://huggingface.co/nctu6/Llama3-TAIDE-LX-8B-Chat-Alpha1-GGUF) (示意，建議搜尋最新版)
+* 或者使用通用版: `Meta-Llama-3-8B-Instruct-GGUF`
+
+
+
+**建議規格 (依據 16GB RAM)：**
+
+* **檔案名稱包含**: `Q4_K_M.gguf` (約 4-5 GB，速度快) 或 `Q5_K_M.gguf` (約 5-6 GB，精度較高)
+* **請勿下載**: `fp16` (檔案過大可能導致 OOM)
+
+### 步驟 3：配置路徑
+
+將下載的 `.gguf` 檔案放入 `data/models/` 或自訂資料夾中。
+確認你的配置檔 `data/config.py` 指向正確路徑：
+
+```python
+# 範例配置
+model_path = "./data/models/Llama-3-Taiwan-8B-Instruct.Q4_K_M.gguf"
+```
+
+---
+
