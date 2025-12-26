@@ -1,5 +1,4 @@
-import { IconTrendingDown, IconTrendingUp } from "@tabler/icons-react"
-
+import { IconTrendingDown, IconTrendingUp, IconTargetArrow } from "@tabler/icons-react"
 import { Badge } from "@/components/ui/badge"
 import {
   Card,
@@ -10,94 +9,120 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 
-export function SectionCards() {
+export function SectionCards({ income, expense, netSavings, savingsRate, goalData }) {
+  const formatMoney = (amount) => `$${Number(amount).toLocaleString()}`
+
+  // 輔助函式：產生 Badge 內容 (移除顏色邏輯)
+  const getTrendInfo = (percentage) => {
+    if (percentage === undefined || percentage === null) {
+        return null
+    }
+
+    const val = Number(percentage)
+    const isPositive = val >= 0
+    // 根據正負值決定箭頭方向
+    const Icon = isPositive ? IconTrendingUp : IconTrendingDown
+    
+    return {
+      icon: Icon,
+      text: `${val > 0 ? '+' : ''}${val}%`,
+      // 移除顏色 class，改用預設文字顏色
+      iconClass: "text-foreground", 
+      textClass: "text-foreground"
+    }
+  }
+
+  const incomeTrend = getTrendInfo(goalData?.income?.percentage)
+  const expenseTrend = getTrendInfo(goalData?.expenditure?.percentage)
+  const saveTrend = getTrendInfo(goalData?.total_save?.percentage)
+
   return (
-    <div
-      className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
-      <Card className="@container/card">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
+      
+      {/* 1. 總收入 */}
+      <Card>
         <CardHeader>
-          <CardDescription>Total Revenue</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            $1,250.00
+          <CardDescription>總收入 (Total Income)</CardDescription>
+          <CardTitle className="text-3xl font-semibold tabular-nums">
+            {formatMoney(income)}
           </CardTitle>
           <CardAction>
-            <Badge variant="outline">
-              <IconTrendingUp />
-              +12.5%
-            </Badge>
+            {incomeTrend && (
+              <Badge variant="outline" className="gap-1">
+                <incomeTrend.icon className={`size-3 ${incomeTrend.iconClass}`} />
+                <span className={incomeTrend.textClass}>{incomeTrend.text}</span>
+              </Badge>
+            )}
           </CardAction>
         </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Trending up this month <IconTrendingUp className="size-4" />
-          </div>
-          <div className="text-muted-foreground">
-            Visitors for the last 6 months
+        <CardFooter>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <IconTargetArrow className="size-4" />
+            <span>目標: {formatMoney(goalData?.income?.goal || 0)}</span>
           </div>
         </CardFooter>
       </Card>
-      <Card className="@container/card">
+
+      {/* 2. 總支出 */}
+      <Card>
         <CardHeader>
-          <CardDescription>New Customers</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            1,234
+          <CardDescription>總支出 (Total Expense)</CardDescription>
+          <CardTitle className="text-3xl font-semibold tabular-nums">
+            {formatMoney(expense)}
           </CardTitle>
           <CardAction>
-            <Badge variant="outline">
-              <IconTrendingDown />
-              -20%
-            </Badge>
+             {expenseTrend && (
+              <Badge variant="outline" className="gap-1">
+                <expenseTrend.icon className={`size-3 ${expenseTrend.iconClass}`} />
+                <span className={expenseTrend.textClass}>{expenseTrend.text}</span>
+              </Badge>
+             )}
           </CardAction>
         </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Down 20% this period <IconTrendingDown className="size-4" />
-          </div>
-          <div className="text-muted-foreground">
-            Acquisition needs attention
+        <CardFooter>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <IconTargetArrow className="size-4" />
+            <span>目標: {formatMoney(goalData?.expenditure?.goal || 0)}</span>
           </div>
         </CardFooter>
       </Card>
-      <Card className="@container/card">
+
+      {/* 3. 淨結餘 */}
+      <Card>
         <CardHeader>
-          <CardDescription>Active Accounts</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            45,678
+          <CardDescription>淨結餘 (Net Savings)</CardDescription>
+          <CardTitle className="text-3xl font-semibold tabular-nums">
+            {formatMoney(netSavings)}
           </CardTitle>
           <CardAction>
-            <Badge variant="outline">
-              <IconTrendingUp />
-              +12.5%
-            </Badge>
+            {saveTrend && (
+              <Badge variant="outline" className="gap-1">
+                <saveTrend.icon className={`size-3 ${saveTrend.iconClass}`} />
+                <span className={saveTrend.textClass}>{saveTrend.text}</span>
+              </Badge>
+            )}
           </CardAction>
         </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Strong user retention <IconTrendingUp className="size-4" />
+        <CardFooter>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <IconTargetArrow className="size-4" />
+            <span>目標: {formatMoney(goalData?.total_save?.goal || 0)}</span>
           </div>
-          <div className="text-muted-foreground">Engagement exceed targets</div>
         </CardFooter>
       </Card>
-      <Card className="@container/card">
+
+      {/* 4. 儲蓄率 (移除目標與箭頭) */}
+      <Card>
         <CardHeader>
-          <CardDescription>Growth Rate</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            4.5%
+          <CardDescription>儲蓄率 (Savings Rate)</CardDescription>
+          <CardTitle className="text-3xl font-semibold tabular-nums">
+            {savingsRate}
           </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <IconTrendingUp />
-              +4.5%
-            </Badge>
-          </CardAction>
+          {/* 這裡移除了 CardAction (箭頭) */}
         </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Steady performance increase <IconTrendingUp className="size-4" />
-          </div>
-          <div className="text-muted-foreground">Meets growth projections</div>
-        </CardFooter>
+        {/* 這裡移除了 CardFooter (目標) */}
       </Card>
+
     </div>
-  );
+  )
 }

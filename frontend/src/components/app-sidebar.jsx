@@ -159,7 +159,8 @@ export function AppSidebar({
             <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
               <a href="#">
                 <IconInnerShadowTop className="!size-5" />
-                <span className="text-base font-semibold">Acme Inc.</span>
+                {/* [修改] 將 Acme Inc. 改為 Dashboard */}
+                <span className="text-base font-semibold">Dashboard</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
