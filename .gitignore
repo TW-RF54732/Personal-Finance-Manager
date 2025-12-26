@@ -183,3 +183,4 @@ cython_debug/
 # 忽略 local test 與 資料庫資料夾
 /localTest/
 /DB/
+/node_modules
