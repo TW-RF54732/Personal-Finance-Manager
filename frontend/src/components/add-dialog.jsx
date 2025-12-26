@@ -30,7 +30,7 @@ import {
   Alert,
   AlertDescription,
   AlertTitle,
-} from "@/components/ui/alert" // [新增] Alert 組件
+} from "@/components/ui/alert"
 import { Calendar } from "@/components/ui/calendar"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -44,7 +44,7 @@ export function AddDialog({ onSuccess }) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [categories, setCategories] = useState([])
-  const [error, setError] = useState(null) // [新增] 錯誤訊息狀態
+  const [error, setError] = useState(null)
 
   // 表單狀態
   const [logForm, setLogForm] = useState({ 
@@ -60,7 +60,7 @@ export function AddDialog({ onSuccess }) {
     if (open) {
       loadCategories()
       setLogForm(prev => ({ ...prev, date: new Date() }))
-      setError(null) // 每次開啟重置錯誤
+      setError(null)
     }
   }, [open])
 
@@ -101,11 +101,9 @@ export function AddDialog({ onSuccess }) {
     setLogForm({ ...logForm, date: newDate })
   }
 
-  // [修改] 提交 Log 邏輯
   const handleLogSubmit = async () => {
-    setError(null) // 清除舊錯誤
+    setError(null)
 
-    // 1. 前端基本驗證
     if (!logForm.amount || !logForm.category) {
       setError("請填寫完整的金額與類別")
       return
@@ -113,7 +111,6 @@ export function AddDialog({ onSuccess }) {
 
     const amountValue = parseFloat(logForm.amount)
 
-    // 2. [新增] 驗證金額不得小於 0
     if (amountValue < 0) {
       setError("金額不得小於 0。若為支出請選擇「支出」類型，數值請填寫正數。")
       return
@@ -135,14 +132,11 @@ export function AddDialog({ onSuccess }) {
       if (onSuccess) onSuccess() 
 
     } catch (err) {
-      // 3. [新增] 處理後端回傳的錯誤 (包含 422)
       console.error(err)
       let errorMsg = "發生未知錯誤"
       
       if (err.response) {
-        // FastAPI 422 錯誤通常是 JSON array
         if (err.response.status === 422 && Array.isArray(err.response.data?.detail)) {
-           // 將 422 的欄位錯誤組合成字串
            const details = err.response.data.detail.map(d => `${d.loc[1]}: ${d.msg}`).join(", ")
            errorMsg = `資料格式錯誤 (422): ${details}`
         } else {
@@ -150,7 +144,7 @@ export function AddDialog({ onSuccess }) {
         }
       }
       
-      setError(errorMsg) // 顯示紅色 Alert
+      setError(errorMsg)
     } finally {
       setLoading(false)
     }
@@ -181,9 +175,11 @@ export function AddDialog({ onSuccess }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="hidden sm:flex gap-1">
+        {/* [修正重點] 移除了 'hidden'，改用響應式文字顯示 */}
+        <Button className="flex gap-1 shrink-0">
           <IconPlus className="size-4" />
-          新增資料
+          <span className="hidden sm:inline">新增資料</span>
+          <span className="inline sm:hidden">新增</span>
         </Button>
       </DialogTrigger>
       
@@ -195,7 +191,6 @@ export function AddDialog({ onSuccess }) {
           </DialogDescription>
         </DialogHeader>
 
-        {/* [新增] 錯誤訊息顯示區 - 紅框 */}
         {error && (
           <Alert variant="destructive" className="mb-2">
             <IconAlertCircle className="h-4 w-4" />
@@ -212,7 +207,6 @@ export function AddDialog({ onSuccess }) {
             <TabsTrigger value="category">新增 Category (類別)</TabsTrigger>
           </TabsList>
           
-          {/* --- Log 表單 --- */}
           <TabsContent value="log" className="space-y-4 py-4">
             
             <div className="flex gap-2">
@@ -291,7 +285,6 @@ export function AddDialog({ onSuccess }) {
 
             <div className="grid w-full items-center gap-2">
                 <Label htmlFor="amount">金額</Label>
-                {/* [修改] 加上 min="0" 限制，並移除允許負數的提示文字 */}
                 <Input 
                   type="number" 
                   id="amount" 
@@ -322,7 +315,6 @@ export function AddDialog({ onSuccess }) {
             </div>
           </TabsContent>
           
-          {/* --- Category 表單 --- */}
           <TabsContent value="category" className="space-y-4 py-4">
              <div className="grid w-full items-center gap-2">
                 <Label htmlFor="cat-name">類別名稱</Label>

@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { createLog, getCategories } from "@/lib/api"
+import { Plus } from "lucide-react"
 
 export function AddTransactionDialog({ onSuccess }) {
   const [open, setOpen] = useState(false)
@@ -136,3 +137,16 @@ export function AddTransactionDialog({ onSuccess }) {
     </Dialog>
   )
 }
+return (
+  <Dialog open={open} onOpenChange={setOpen}>
+    <DialogTrigger asChild>
+      <Button className="gap-2">
+        <Plus className="h-4 w-4" />
+        {/* 手機版隱藏文字，只顯示 + 號，電腦版顯示完整文字 */}
+        <span className="hidden sm:inline">新增交易</span>
+        <span className="inline sm:hidden">新增</span>
+      </Button>
+    </DialogTrigger>
+    {/* ... DialogContent ... */}
+  </Dialog>
+)

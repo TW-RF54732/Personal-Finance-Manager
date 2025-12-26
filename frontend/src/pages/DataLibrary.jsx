@@ -147,7 +147,6 @@ export default function DataLibrary() {
     const selectedIndices = Object.keys(rowSelection).map(Number)
     if (selectedIndices.length === 0 || !batchCategory) return
     
-    // 使用原生 confirm 或也可改為 AlertDialog，這裡示範保留原生以簡化
     if(!confirm(`確定將選取的 ${selectedIndices.length} 筆資料類別改為「${batchCategory}」？`)) return
 
     setLoading(true)
@@ -203,7 +202,7 @@ export default function DataLibrary() {
   return (
     <div className="flex flex-1 flex-col p-4 md:p-6 gap-6 relative">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold tracking-tight">資料庫管理 (Data Library)</h2>
+        <h2 className="text-2xl font-bold tracking-tight">資料庫管理</h2>
       </div>
 
       <Tabs defaultValue="logs" className="space-y-4">
@@ -312,7 +311,8 @@ export default function DataLibrary() {
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3">
+          {/* [修復] 中間控制區：允許換行 (flex-wrap) 避免在手機上超出邊界 */}
+          <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3">
              <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">每頁顯示</span>
                 <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
@@ -373,10 +373,8 @@ export default function DataLibrary() {
             
             <div className="h-6 w-px bg-primary-foreground/30 mx-2 hidden sm:block"></div>
 
-            {/* [UI 修改] 批量刪除與 Alert Dialog */}
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                {/* 觸發按鈕設為 Default (Primary)，避免使用紅色 */}
                 <Button variant="default" size="sm" className="bg-primary-foreground text-primary hover:bg-primary-foreground/90">
                   <Trash2 className="w-4 h-4 mr-2" /> 刪除
                 </Button>
@@ -390,7 +388,6 @@ export default function DataLibrary() {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>取消</AlertDialogCancel>
-                  {/* [UI 修改] 確認按鈕使用主題色 */}
                   <AlertDialogAction onClick={executeBatchDelete}>
                     確認刪除
                   </AlertDialogAction>

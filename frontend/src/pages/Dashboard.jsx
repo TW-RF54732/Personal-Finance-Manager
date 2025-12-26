@@ -9,8 +9,8 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select"
-// [修改] 移除 AddTransactionDialog，改用與 Header 相同的 AddDialog
-import { AddDialog } from "@/components/add-dialog"
+// [重要] 確保路徑是 components/add-dialog
+import { AddDialog } from "@/components/add-dialog" 
 import { fetchAnalysisReport, fetchMonthlyLogs, fetchMonthlyLogsForTable, fetchGoalReport } from "@/lib/api"
 import { getReadonlyColumns } from "@/components/columns-readonly"
 
@@ -79,15 +79,16 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-1 flex-col p-4 md:p-6 gap-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <h2 className="text-lg font-semibold">財務概覽</h2>
           
-          <div className="flex items-center gap-4">
-            {/* [修改] 這裡現在使用的是 AddDialog，功能與 Header 上的一致 */}
+          <div className="flex w-full sm:w-auto items-center justify-between sm:justify-end gap-4">
+            
+            {/* 使用更新後的 AddDialog */}
             <AddDialog onSuccess={loadData} />
 
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">月份：</span>
+              <span className="text-sm text-muted-foreground hidden sm:inline">月份：</span>
               <Select value={selectedMonth} onValueChange={setSelectedMonth}>
                 <SelectTrigger className="w-[140px] bg-background">
                   <SelectValue placeholder="選擇月份" />

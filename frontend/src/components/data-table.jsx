@@ -52,15 +52,15 @@ export function DataTable({
 
   return (
     <div>
-      <div className="rounded-md border">
-        {/* [修改] 加入 table-fixed 讓寬度固定，避免跳動 */}
-        <Table className="table-fixed w-full">
+      {/* [修復] 1. 加入 overflow-x-auto 允許橫向捲動 */}
+      <div className="rounded-md border overflow-x-auto">
+        {/* [修復] 2. 設定 min-w-[600px] 確保表格有足夠寬度顯示所有固定欄位，不會被壓縮 */}
+        <Table className="table-fixed w-full min-w-[600px]">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
                   return (
-                    // [修改] 讀取 column 定義中的 meta.className 來設定寬度
                     <TableHead 
                         key={header.id} 
                         className={header.column.columnDef.meta?.className}
@@ -85,7 +85,6 @@ export function DataTable({
                   data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    // [修改] 同步設定 Cell 的寬度 class
                     <TableCell 
                         key={cell.id}
                         className={cell.column.columnDef.meta?.className}
