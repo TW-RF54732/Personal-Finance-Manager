@@ -1,6 +1,5 @@
 import {
   IconCreditCard,
-  IconDotsVertical,
   IconLogout,
   IconNotification,
   IconUserCircle,
@@ -50,7 +49,7 @@ export function NavUser({
                   {user.email}
                 </span>
               </div>
-              <IconDotsVertical className="ml-auto size-4" />
+              {/* [修改] 移除了這裡的 IconDotsVertical */}
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent

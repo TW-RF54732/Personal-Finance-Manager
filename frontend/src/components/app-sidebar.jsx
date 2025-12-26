@@ -1,23 +1,11 @@
 import * as React from "react"
 import {
-  IconCamera,
   IconChartBar,
   IconDashboard,
   IconDatabase,
-  IconFileAi,
-  IconFileDescription,
-  IconFileWord,
-  IconFolder,
-  IconHelp,
-  IconInnerShadowTop,
-  IconListDetails,
-  IconReport,
-  IconSearch,
   IconSettings,
-  IconUsers,
 } from "@tabler/icons-react"
 
-import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
@@ -31,12 +19,16 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 
+// 引入你的 Logo
+import LogoImage from "@/assets/LOGO.png"
+
 const data = {
   user: {
-    name: "shadcn",
-    email: "m@example.com",
+    name: "User",
+    email: "user@example.com",
     avatar: "/avatars/shadcn.jpg",
   },
+  // [修改] 將 Data Library 合併至此
   navMain: [
     {
       title: "Dashboard",
@@ -44,72 +36,14 @@ const data = {
       icon: IconDashboard,
     },
     {
-      title: "Lifecycle",
-      url: "#",
-      icon: IconListDetails,
-    },
-    {
       title: "Analytics",
       url: "#",
       icon: IconChartBar,
     },
     {
-      title: "Projects",
+      title: "Data Library",
       url: "#",
-      icon: IconFolder,
-    },
-    {
-      title: "Team",
-      url: "#",
-      icon: IconUsers,
-    },
-  ],
-  navClouds: [
-    {
-      title: "Capture",
-      icon: IconCamera,
-      isActive: true,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Proposal",
-      icon: IconFileDescription,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Prompts",
-      icon: IconFileAi,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
+      icon: IconDatabase,
     },
   ],
   navSecondary: [
@@ -117,33 +51,6 @@ const data = {
       title: "Settings",
       url: "#",
       icon: IconSettings,
-    },
-    {
-      title: "Get Help",
-      url: "#",
-      icon: IconHelp,
-    },
-    {
-      title: "Search",
-      url: "#",
-      icon: IconSearch,
-    },
-  ],
-  documents: [
-    {
-      name: "Data Library",
-      url: "#",
-      icon: IconDatabase,
-    },
-    {
-      name: "Reports",
-      url: "#",
-      icon: IconReport,
-    },
-    {
-      name: "Word Assistant",
-      url: "#",
-      icon: IconFileWord,
     },
   ],
 }
@@ -156,11 +63,15 @@ export function AppSidebar({
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
+            <SidebarMenuButton size="lg" asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
               <a href="#">
-                <IconInnerShadowTop className="!size-5" />
-                {/* [修改] 將 Acme Inc. 改為 Dashboard */}
-                <span className="text-base font-semibold">Dashboard</span>
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                  <img src={LogoImage} alt="Logo" className="size-6 object-contain invert" />
+                </div>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-semibold">Finance App</span>
+                  <span className="truncate text-xs">v1.0.0</span>
+                </div>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -168,7 +79,7 @@ export function AppSidebar({
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavDocuments items={data.documents} />
+        {/* [修改] 移除了 NavDocuments */}
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
