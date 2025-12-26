@@ -101,9 +101,20 @@ class FinanceDB:
             log = FinanceLog(category_id=category_id, actual_type=actual_type, amount=amount, note=note, timestamp=ts)
             self.session.add(log)
             self.session.commit()
-            # refresh to populate relationship
             self.session.refresh(log)
             return log
+        except Exception:
+            self.session.rollback()
+            raise
+    def delete_log_by_id(self, log_id: int) -> bool:
+        """刪除指定ID的日誌 (新增)"""
+        try:
+            log = self.session.query(FinanceLog).filter_by(id=log_id).first()
+            if not log:
+                return False
+            self.session.delete(log)
+            self.session.commit()
+            return True
         except Exception:
             self.session.rollback()
             raise
@@ -285,7 +296,9 @@ class FinanceService:
         if not category_name or not isinstance(category_name, str):
             raise ValueError("category_name 必須為非空字串")
         if not isinstance(amount, (int, float)):
-            raise ValueError("amount 必須為數字")
+            raise ValueError("金額格式錯誤，必須為數字")
+        if amount <= 0:
+            raise ValueError("金額必須大於 0")
         if actual_type is not None and not isinstance(actual_type, Direction):
             raise ValueError("actual_type 必須為 Direction 或 None")
         if note is not None and not isinstance(note, str):
@@ -405,6 +418,11 @@ class FinanceService:
             if not cat:
                 raise ValueError(f"找不到類別 '{category_name}'")
             category_id = cat.id
+        if amount is not None:
+            if not isinstance(amount, (int, float)):
+                raise ValueError("金額格式錯誤，必須為數字")
+            if amount <= 0:
+                raise ValueError("金額必須大於 0")
             
         if actual_type is not None and not isinstance(actual_type, Direction):
             raise ValueError("actual_type 必須為 Direction")
@@ -422,6 +440,10 @@ class FinanceService:
         if not log:
             return None
         return self._log_to_dict(log)
+    
+    def delete_log(self, log_id: int) -> bool:
+        """刪除日誌 (新增)"""
+        return self.db.delete_log_by_id(log_id)
 
 
 
