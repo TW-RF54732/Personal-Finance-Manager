@@ -26,46 +26,54 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert" // [新增] Alert 組件
 import { Calendar } from "@/components/ui/calendar"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { IconPlus, IconLoader2, IconCalendar, IconClock } from "@tabler/icons-react"
+import { IconPlus, IconLoader2, IconCalendar, IconClock, IconAlertCircle } from "@tabler/icons-react"
 import { getCategories, createLog, createCategory } from "@/lib/api"
-import { format } from "date-fns" // 用來格式化日期
+import { format } from "date-fns"
 import { cn } from "@/lib/utils"
-// 假設你有安裝 sonner，若無可用 alert 代替
 import { toast } from "sonner" 
 
 export function AddDialog({ onSuccess }) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [categories, setCategories] = useState([])
+  const [error, setError] = useState(null) // [新增] 錯誤訊息狀態
 
   // 表單狀態
   const [logForm, setLogForm] = useState({ 
     amount: "", 
     note: "", 
     category: "", 
-    type: "Expenditure", // 預設支出
-    date: new Date()     // 預設當下時間
+    type: "Expenditure",
+    date: new Date()
   })
   const [catForm, setCatForm] = useState({ name: "", type: "Expenditure" })
 
-  // 開啟彈窗時抓取類別列表
   useEffect(() => {
     if (open) {
       loadCategories()
-      // 每次開啟重置時間為當下
       setLogForm(prev => ({ ...prev, date: new Date() }))
+      setError(null) // 每次開啟重置錯誤
     }
   }, [open])
 
   const loadCategories = async () => {
-    const data = await getCategories()
-    setCategories(data)
+    try {
+      const data = await getCategories()
+      setCategories(data)
+    } catch (e) {
+      console.error("無法載入類別", e)
+    }
   }
 
-  // [關鍵邏輯] 當類別改變時，自動切換收支類型為該類別的預設值
+  // 類別連動收支類型
   useEffect(() => {
     if (logForm.category) {
       const selectedCat = categories.find(c => c.name === logForm.category)
@@ -75,7 +83,6 @@ export function AddDialog({ onSuccess }) {
     }
   }, [logForm.category, categories])
 
-  // 處理時間選擇 (Input type="time")
   const handleTimeChange = (e) => {
     const timeStr = e.target.value
     if (!timeStr) return
@@ -86,48 +93,73 @@ export function AddDialog({ onSuccess }) {
     setLogForm({ ...logForm, date: newDate })
   }
 
-  // 處理日期選擇 (Calendar)
   const handleDateSelect = (selectedDate) => {
     if (!selectedDate) return
     const newDate = new Date(selectedDate)
-    // 保留原本的時間
     newDate.setHours(logForm.date.getHours())
     newDate.setMinutes(logForm.date.getMinutes())
     setLogForm({ ...logForm, date: newDate })
   }
 
-  // 提交 Log
+  // [修改] 提交 Log 邏輯
   const handleLogSubmit = async () => {
+    setError(null) // 清除舊錯誤
+
+    // 1. 前端基本驗證
     if (!logForm.amount || !logForm.category) {
-      toast.error("請填寫金額與類別")
+      setError("請填寫完整的金額與類別")
       return
     }
-    
+
+    const amountValue = parseFloat(logForm.amount)
+
+    // 2. [新增] 驗證金額不得小於 0
+    if (amountValue < 0) {
+      setError("金額不得小於 0。若為支出請選擇「支出」類型，數值請填寫正數。")
+      return
+    }
+
     setLoading(true)
     try {
       await createLog({
         category_name: logForm.category,
-        amount: parseFloat(logForm.amount),
+        amount: amountValue,
         note: logForm.note,
-        actual_type: logForm.type, // 傳送選擇的類型
-        timestamp: logForm.date.toISOString() // 傳送完整的日期時間
+        actual_type: logForm.type,
+        timestamp: logForm.date.toISOString()
       })
+      
       toast.success("交易紀錄新增成功！")
       setOpen(false)
-      // 重置表單 (日期除外，下次開會重置)
       setLogForm({ ...logForm, amount: "", note: "", category: "" }) 
       if (onSuccess) onSuccess() 
-    } catch (error) {
-      toast.error("新增失敗: " + (error.response?.data?.detail || error.message))
+
+    } catch (err) {
+      // 3. [新增] 處理後端回傳的錯誤 (包含 422)
+      console.error(err)
+      let errorMsg = "發生未知錯誤"
+      
+      if (err.response) {
+        // FastAPI 422 錯誤通常是 JSON array
+        if (err.response.status === 422 && Array.isArray(err.response.data?.detail)) {
+           // 將 422 的欄位錯誤組合成字串
+           const details = err.response.data.detail.map(d => `${d.loc[1]}: ${d.msg}`).join(", ")
+           errorMsg = `資料格式錯誤 (422): ${details}`
+        } else {
+           errorMsg = err.response.data?.detail || err.message
+        }
+      }
+      
+      setError(errorMsg) // 顯示紅色 Alert
     } finally {
       setLoading(false)
     }
   }
 
-  // 提交 Category
   const handleCategorySubmit = async () => {
+    setError(null)
     if (!catForm.name) {
-      toast.error("請填寫類別名稱")
+      setError("請填寫類別名稱")
       return
     }
 
@@ -138,8 +170,9 @@ export function AddDialog({ onSuccess }) {
       setOpen(false)
       setCatForm({ name: "", type: "Expenditure" })
       if (onSuccess) onSuccess()
-    } catch (error) {
-      toast.error("新增失敗: " + (error.response?.data?.detail || error.message))
+    } catch (err) {
+      const msg = err.response?.data?.detail || err.message
+      setError(msg)
     } finally {
       setLoading(false)
     }
@@ -161,8 +194,19 @@ export function AddDialog({ onSuccess }) {
             請選擇要新增的項目類型並填寫詳細資訊。
           </DialogDescription>
         </DialogHeader>
+
+        {/* [新增] 錯誤訊息顯示區 - 紅框 */}
+        {error && (
+          <Alert variant="destructive" className="mb-2">
+            <IconAlertCircle className="h-4 w-4" />
+            <AlertTitle>錯誤</AlertTitle>
+            <AlertDescription>
+              {error}
+            </AlertDescription>
+          </Alert>
+        )}
         
-        <Tabs defaultValue="log" className="w-full">
+        <Tabs defaultValue="log" className="w-full" onValueChange={() => setError(null)}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="log">新增 Log (交易)</TabsTrigger>
             <TabsTrigger value="category">新增 Category (類別)</TabsTrigger>
@@ -171,9 +215,7 @@ export function AddDialog({ onSuccess }) {
           {/* --- Log 表單 --- */}
           <TabsContent value="log" className="space-y-4 py-4">
             
-            {/* 第一排：類別 | 收支類型 | 日期選擇 */}
             <div className="flex gap-2">
-              {/* 1. 類別選擇 */}
               <div className="flex-1 space-y-2">
                 <Label>類別</Label>
                 <Select 
@@ -193,7 +235,6 @@ export function AddDialog({ onSuccess }) {
                 </Select>
               </div>
 
-              {/* 2. 收支類型選擇 (預設跟隨類別，可手動改) */}
               <div className="w-[110px] space-y-2">
                 <Label>類型</Label>
                 <Select 
@@ -210,7 +251,6 @@ export function AddDialog({ onSuccess }) {
                 </Select>
               </div>
 
-              {/* 3. 日期與時間 Popover */}
               <div className="w-[100px] space-y-2">
                 <Label>日期</Label>
                 <Popover>
@@ -235,7 +275,6 @@ export function AddDialog({ onSuccess }) {
                           initialFocus
                         />
                     </div>
-                    {/* 時間選擇區塊 */}
                     <div className="p-3 flex items-center gap-2">
                         <IconClock className="size-4 text-muted-foreground" />
                         <Input 
@@ -252,9 +291,12 @@ export function AddDialog({ onSuccess }) {
 
             <div className="grid w-full items-center gap-2">
                 <Label htmlFor="amount">金額</Label>
+                {/* [修改] 加上 min="0" 限制，並移除允許負數的提示文字 */}
                 <Input 
                   type="number" 
                   id="amount" 
+                  min="0"
+                  step="0.01"
                   placeholder="例如: 100" 
                   value={logForm.amount}
                   onChange={(e) => setLogForm({...logForm, amount: e.target.value})}
@@ -280,7 +322,7 @@ export function AddDialog({ onSuccess }) {
             </div>
           </TabsContent>
           
-          {/* --- Category 表單 (保持不變) --- */}
+          {/* --- Category 表單 --- */}
           <TabsContent value="category" className="space-y-4 py-4">
              <div className="grid w-full items-center gap-2">
                 <Label htmlFor="cat-name">類別名稱</Label>
