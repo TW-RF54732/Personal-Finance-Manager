@@ -184,3 +184,4 @@ cython_debug/
 /localTest/
 /DB/
 /data/models/*
+node_modules
