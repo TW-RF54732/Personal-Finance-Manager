@@ -3,7 +3,6 @@ from typing import List, Optional
 from datetime import datetime
 from pydantic import BaseModel, Field
 
-# 引用你的資料庫定義
 from dataBase.FinanceDB import FinanceService, Direction, SortField
 
 # --- 1. Pydantic Models (資料驗證模型) ---
@@ -25,7 +24,8 @@ class CategoryResponse(BaseModel):
 # 日誌相關模型
 class LogCreate(BaseModel):
     category_name: str
-    amount: float
+    # 修改：加入 gt=0 (greater than 0)，若傳入字串 Pydantic 會自動擋下回傳 422
+    amount: float = Field(..., gt=0, description="金額必須為大於 0 的數字") 
     actual_type: Optional[Direction] = None
     note: Optional[str] = None
     timestamp: Optional[datetime] = Field(default_factory=datetime.utcnow)
@@ -33,7 +33,8 @@ class LogCreate(BaseModel):
 class LogUpdate(BaseModel):
     category_name: Optional[str] = None
     actual_type: Optional[Direction] = None
-    amount: Optional[float] = None
+    # 修改：加入 gt=0
+    amount: Optional[float] = Field(None, gt=0, description="金額必須為大於 0 的數字")
     note: Optional[str] = None
     timestamp: Optional[datetime] = None
 
@@ -114,7 +115,6 @@ async def create_log(
 ):
     """新增財務日誌"""
     try:
-        # 注意：Service 參數名稱是 actuall_time (依照你提供的程式碼)
         result = service.add_log(
             category_name=log.category_name,
             amount=log.amount,
@@ -124,18 +124,22 @@ async def create_log(
         )
         return result
     except ValueError as e:
+        # 捕捉 Service 層拋出的錯誤，回傳 400 給前端
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/logs/{log_id}")
-async def get_log(
-    log_id: int, 
+@router.delete("/logs/{log_id}")
+async def delete_log(
+    log_id: int,
     service: FinanceService = Depends(get_service)
 ):
-    """取得單筆日誌"""
-    result = service.get_log_by_id(log_id)
-    if not result:
-        raise HTTPException(status_code=404, detail="Log not found")
-    return result
+    """刪除日誌"""
+    try:
+        success = service.delete_log(log_id)
+        if not success:
+            raise HTTPException(status_code=404, detail="Log not found")
+        return {"status": "success", "message": f"Log {log_id} deleted"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.put("/logs/{log_id}")
 async def update_log(
@@ -193,3 +197,4 @@ async def get_filtered_logs(
         return results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+ 
