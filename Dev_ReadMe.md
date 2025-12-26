@@ -6,7 +6,8 @@ git clone https://github.com/TW-RF54732/Personal-Finance-Manager.git #下載repo
 cd Personal-Finance-Manager #進入資料夾
 python -m venv .venv #創建虛擬環境
 .\.venv\Scripts\Activate.ps1 #啟動虛擬環境
-pip install -r .\requirment.txt #安裝所需依賴
+mkdir DB
+pip install -r .\requirments.txt #安裝所需依賴
 ```
 
 # git
