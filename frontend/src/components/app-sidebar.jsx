@@ -5,7 +5,6 @@ import {
   IconDatabase,
   IconSettings,
 } from "@tabler/icons-react"
-
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
@@ -18,31 +17,30 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-
-// 引入你的 Logo
 import LogoImage from "@/assets/LOGO.png"
 
+// 1. 修改 URL
 const data = {
   user: {
     name: "User",
     email: "user@example.com",
     avatar: "/avatars/shadcn.jpg",
   },
-  // [修改] 將 Data Library 合併至此
   navMain: [
     {
       title: "Dashboard",
-      url: "#",
+      url: "/",        // 改為根目錄
       icon: IconDashboard,
     },
+    // 你也可以把 Analytics 指向 Dashboard 或另外做
     {
       title: "Analytics",
-      url: "#",
+      url: "/", 
       icon: IconChartBar,
     },
     {
       title: "Data Library",
-      url: "#",
+      url: "/library", // 改為 /library
       icon: IconDatabase,
     },
   ],
@@ -55,16 +53,15 @@ const data = {
   ],
 }
 
-export function AppSidebar({
-  ...props
-}) {
+export function AppSidebar({ ...props }) {
+  // ... (下方程式碼保持不變，直接 return Sidebar 結構)
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
-              <a href="#">
+              <a href="/">
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                   <img src={LogoImage} alt="Logo" className="size-6 object-contain invert" />
                 </div>
@@ -79,7 +76,6 @@ export function AppSidebar({
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        {/* [修改] 移除了 NavDocuments */}
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>

@@ -12,7 +12,6 @@ export function SiteHeader({ onRefresh }) {
         <h1 className="text-base font-medium">Dashboard</h1>
         <div className="ml-auto flex items-center gap-2">
           {/* 當 AddDialog 成功新增資料後，會呼叫 onRefresh，觸發 App.jsx 重新抓取資料 */}
-          <AddDialog onSuccess={onRefresh} />
         </div>
       </div>
     </header>

@@ -2,7 +2,8 @@ import * as React from "react"
 import {
   flexRender,
   getCoreRowModel,
-  getPaginationRowModel, // [新增] 引入分頁模型
+  getPaginationRowModel,
+  getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
 import {
@@ -13,84 +14,82 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button" // [新增] 引入按鈕
-import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react" // [新增] 引入 icon
+import { Button } from "@/components/ui/button"
 
-const columns = [
-  {
-    accessorKey: "timestamp",
-    header: "日期",
-    cell: ({ row }) => {
-      const date = new Date(row.getValue("timestamp"))
-      const year = date.getFullYear()
-      const month = String(date.getMonth() + 1).padStart(2, '0')
-      const day = String(date.getDate()).padStart(2, '0')
-      return <div className="text-muted-foreground">{`${year}-${month}-${day}`}</div>
-    },
-  },
-  {
-    accessorKey: "category",
-    header: "類別",
-    cell: ({ row }) => <Badge variant="outline">{row.getValue("category")}</Badge>,
-  },
-  {
-    accessorKey: "note",
-    header: "備註",
-    cell: ({ row }) => <div className="max-w-[200px] truncate">{row.getValue("note")}</div>,
-  },
-  {
-    accessorKey: "amount",
-    header: () => <div className="text-right">金額</div>,
-    cell: ({ row }) => {
-      const amount = parseFloat(row.getValue("amount"))
-      const type = row.original.actual_type 
-      const isIncome = type === "Income"
-      return (
-        <div className={`text-right font-medium ${isIncome ? "text-green-600" : "text-red-600"}`}>
-          {isIncome ? "+" : "-"}${amount}
-        </div>
-      )
-    },
-  },
-]
+export function DataTable({ 
+  columns, 
+  data, 
+  rowSelection = {}, 
+  setRowSelection,
+  pageSize = 10 
+}) {
+  const [sorting, setSorting] = React.useState([])
+  
+  const [pagination, setPagination] = React.useState({
+    pageIndex: 0,
+    pageSize: pageSize,
+  })
 
-export function DataTable({ data }) {
+  React.useEffect(() => {
+    setPagination((prev) => ({ ...prev, pageSize: pageSize }))
+  }, [pageSize])
+
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(), // [新增] 啟用分頁
-    initialState: {
-      pagination: {
-        pageSize: 10, // [新增] 預設每頁 10 筆
-      },
+    getPaginationRowModel: getPaginationRowModel(),
+    onSortingChange: setSorting,
+    getSortedRowModel: getSortedRowModel(),
+    onRowSelectionChange: setRowSelection ? setRowSelection : undefined,
+    onPaginationChange: setPagination,
+    state: {
+      sorting,
+      rowSelection,
+      pagination,
     },
   })
 
   return (
-    <div className="space-y-4"> {/* 包裹一層 div 以處理間距 */}
-      <div className="rounded-md border bg-card">
-        <Table>
+    <div>
+      <div className="rounded-md border">
+        {/* [修改] 加入 table-fixed 讓寬度固定，避免跳動 */}
+        <Table className="table-fixed w-full">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
-                  </TableHead>
-                ))}
+                {headerGroup.headers.map((header) => {
+                  return (
+                    // [修改] 讀取 column 定義中的 meta.className 來設定寬度
+                    <TableHead 
+                        key={header.id} 
+                        className={header.column.columnDef.meta?.className}
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  )
+                })}
               </TableRow>
             ))}
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    // [修改] 同步設定 Cell 的寬度 class
+                    <TableCell 
+                        key={cell.id}
+                        className={cell.column.columnDef.meta?.className}
+                    >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
@@ -99,39 +98,36 @@ export function DataTable({ data }) {
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center">
-                  沒有交易紀錄
+                  沒有資料
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </div>
-
-      {/* [新增] 分頁控制區 */}
-      <div className="flex items-center justify-end space-x-2">
+      
+      <div className="flex items-center justify-end space-x-2 py-4 mt-2 px-2">
         <div className="flex-1 text-sm text-muted-foreground">
-           第 {table.getState().pagination.pageIndex + 1} 頁，共 {table.getPageCount()} 頁
+            {Object.keys(rowSelection).length > 0 && (
+                <span>已選取 {Object.keys(rowSelection).length} 筆</span>
+            )}
         </div>
-        <div className="space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            <IconChevronLeft className="h-4 w-4" />
-            上一頁
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            下一頁
-            <IconChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => table.previousPage()}
+          disabled={!table.getCanPreviousPage()}
+        >
+          上一頁
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => table.nextPage()}
+          disabled={!table.getCanNextPage()}
+        >
+          下一頁
+        </Button>
       </div>
     </div>
   )
