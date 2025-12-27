@@ -13,7 +13,17 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs" 
 import { createLog, createCategory, getCategories } from "@/lib/api"
-import { Plus, AlertCircle } from "lucide-react"
+import { Plus, AlertCircle, Calendar as CalendarIcon, ChevronDown } from "lucide-react"
+
+// Date Picker 相關
+import { format } from "date-fns"
+import { cn } from "@/lib/utils"
+import { Calendar } from "@/components/ui/calendar"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 
 export function AddDialog({ onSuccess }) {
   const [open, setOpen] = useState(false)
@@ -22,12 +32,15 @@ export function AddDialog({ onSuccess }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null) 
 
+  // 日曆 Popover 開關狀態
+  const [calendarOpen, setCalendarOpen] = useState(false)
+
   const [logData, setLogData] = useState({
     amount: "",
     category_name: "",
     note: "",
     actual_type: "Expenditure",
-    date: new Date().toISOString().split('T')[0] 
+    date: new Date() 
   })
 
   const [catData, setCatData] = useState({
@@ -39,18 +52,16 @@ export function AddDialog({ onSuccess }) {
     if (open) {
       getCategories().then(setCategories)
       setError(null)
+      setLogData(prev => ({ ...prev, date: new Date() }))
     }
   }, [open, activeTab]) 
 
-  // [新增] 錯誤訊息解析 helper
   const parseErrorMessage = (err) => {
     if (err.response?.data?.detail) {
       const detail = err.response.data.detail
-      // 如果 Pydantic 回傳的是陣列 (Validation Error)
       if (Array.isArray(detail)) {
         return detail.map(d => d.msg).join(", ")
       }
-      // 如果是物件或其他
       if (typeof detail === 'object') {
         return JSON.stringify(detail)
       }
@@ -59,13 +70,36 @@ export function AddDialog({ onSuccess }) {
     return err.message || "發生未知錯誤"
   }
 
+  // 處理日期變更 (保留原本的時間)
+  const handleDateSelect = (newDate) => {
+    if (!newDate) return
+    const currentDate = logData.date || new Date()
+    newDate.setHours(currentDate.getHours())
+    newDate.setMinutes(currentDate.getMinutes())
+    newDate.setSeconds(0)
+    
+    setLogData({ ...logData, date: newDate })
+    setCalendarOpen(false) // 選完日期自動關閉
+  }
+
+  // 處理時間變更
+  const handleTimeChange = (e) => {
+    const timeStr = e.target.value // "14:30"
+    if (!timeStr) return
+    const [hours, minutes] = timeStr.split(':').map(Number)
+    const newDate = new Date(logData.date || new Date())
+    newDate.setHours(hours)
+    newDate.setMinutes(minutes)
+    newDate.setSeconds(0)
+    setLogData({ ...logData, date: newDate })
+  }
+
   const handleLogSubmit = async () => {
     if (!logData.amount || !logData.category_name) {
       setError("請填寫金額與類別")
       return
     }
     
-    // 前端先擋下明顯錯誤，但後端也會擋
     if (parseFloat(logData.amount) <= 0) {
         setError("金額必須大於 0")
         return
@@ -75,14 +109,22 @@ export function AddDialog({ onSuccess }) {
     setError(null)
     try {
       await createLog({
-        ...logData,
-        amount: parseFloat(logData.amount)
+        category_name: logData.category_name,
+        amount: parseFloat(logData.amount),
+        actual_type: logData.actual_type,
+        note: logData.note,
+        timestamp: logData.date.toISOString() 
       })
+      
       setOpen(false)
-      setLogData({ ...logData, amount: "", note: "" }) 
+      setLogData({ 
+        ...logData, 
+        amount: "", 
+        note: "",
+        date: new Date() 
+      }) 
       if (onSuccess) onSuccess()
     } catch (err) {
-      // [修改] 使用 helper 處理錯誤訊息，避免白屏
       setError(parseErrorMessage(err))
     } finally {
       setLoading(false)
@@ -102,7 +144,6 @@ export function AddDialog({ onSuccess }) {
         setCatData({ name: "", default_type: "Expenditure" })
         if (onSuccess) onSuccess()
     } catch (err) {
-        // [修改] 使用 helper 處理錯誤訊息，避免白屏
         setError(parseErrorMessage(err))
     } finally {
         setLoading(false)
@@ -139,14 +180,14 @@ export function AddDialog({ onSuccess }) {
             {error && (
                 <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md flex items-start gap-2">
                     <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-                    {/* 這裡現在安全了，因為 error 已經保證是字串 */}
                     <span>{error}</span>
                 </div>
             )}
 
             <div className="grid gap-4">
+               {/* 第一列：類別、類型、金額 (這三項通常最重要) */}
                <div className="grid grid-cols-3 gap-3">
-                  <div className="space-y-2">
+                  <div className="space-y-2 col-span-1">
                     <Label>類別</Label>
                     <Select 
                       value={logData.category_name} 
@@ -163,7 +204,7 @@ export function AddDialog({ onSuccess }) {
                     </Select>
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-2 col-span-1">
                     <Label>類型</Label>
                     <Select 
                       value={logData.actual_type} 
@@ -179,27 +220,62 @@ export function AddDialog({ onSuccess }) {
                     </Select>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label>日期</Label>
-                    <Input 
-                        type="date" 
-                        value={logData.date}
-                        onChange={(e) => setLogData({...logData, date: e.target.value})}
-                        className="block w-full"
+                  <div className="space-y-2 col-span-1">
+                    <Label>金額</Label>
+                    <Input
+                        type="number"
+                        value={logData.amount}
+                        onChange={(e) => setLogData({...logData, amount: e.target.value})}
+                        placeholder="100"
                     />
                   </div>
                </div>
 
-               <div className="space-y-2">
-                  <Label htmlFor="amount">金額</Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    value={logData.amount}
-                    onChange={(e) => setLogData({...logData, amount: e.target.value})}
-                    placeholder="例如: 100"
-                    className="text-lg font-medium"
-                  />
+               {/* [修改] 日期與時間 (拆分為左右兩欄) */}
+               <div className="flex gap-4">
+                  {/* 左側：日期選擇 (Calendar) */}
+                  <div className="flex flex-col gap-2 flex-1">
+                    <Label>日期</Label>
+                    <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-between font-normal pl-3 pr-3",
+                            !logData.date && "text-muted-foreground"
+                          )}
+                        >
+                          <span className="flex items-center">
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {logData.date ? format(logData.date, "yyyy/MM/dd") : <span>選擇日期</span>}
+                          </span>
+                          <ChevronDown className="h-4 w-4 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={logData.date}
+                          onSelect={handleDateSelect}
+                          initialFocus
+                          captionLayout="dropdown" // 允許下拉選年份
+                          fromYear={2020}
+                          toYear={2030}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  {/* 右側：時間輸入 (Time Input) */}
+                  <div className="flex flex-col gap-2 w-1/3">
+                    <Label>時間</Label>
+                    <Input
+                      type="time"
+                      value={logData.date ? format(logData.date, "HH:mm") : "00:00"}
+                      onChange={handleTimeChange}
+                      className="bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden block w-full"
+                    />
+                  </div>
                </div>
 
                <div className="space-y-2">
@@ -220,16 +296,14 @@ export function AddDialog({ onSuccess }) {
             </div>
           </TabsContent>
 
-          {/* ==================== Category 表單 ==================== */}
+          {/* ==================== Category 表單 (保持不變) ==================== */}
           <TabsContent value="category" className="space-y-4 pt-4">
-             
             {error && (
                 <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md flex items-start gap-2">
                     <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
                     <span>{error}</span>
                 </div>
             )}
-
             <div className="space-y-4">
                 <div className="space-y-2">
                     <Label>類別名稱</Label>
@@ -255,7 +329,6 @@ export function AddDialog({ onSuccess }) {
                     </Select>
                 </div>
             </div>
-
             <div className="pt-2">
                 <Button className="w-full" onClick={handleCatSubmit} disabled={loading}>
                     {loading ? "儲存中..." : "儲存 Category"}

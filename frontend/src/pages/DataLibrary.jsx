@@ -40,10 +40,7 @@ export default function DataLibrary() {
   const [loading, setLoading] = useState(false)
   const [categories, setCategories] = useState([])
   
-  // [新增] 1. 頁面初始載入延遲 (解決滑入卡頓)
   const [isReady, setIsReady] = useState(false)
-
-  // [新增] 2. Tab 切換控制 (解決 Tab 動畫瞬移)
   const [activeTab, setActiveTab] = useState("logs")
   const [isTabAnimationDone, setIsTabAnimationDone] = useState(true)
 
@@ -56,6 +53,9 @@ export default function DataLibrary() {
 
   const [batchCategory, setBatchCategory] = useState("")
   const [batchDirection, setBatchDirection] = useState("")
+
+  // [新增] 用來控制批量修改確認對話框的狀態 (取代 confirm)
+  const [batchConfirmType, setBatchConfirmType] = useState(null) // 'category' | 'direction' | null
 
   const [filters, setFilters] = useState({
     month: (() => {
@@ -77,7 +77,6 @@ export default function DataLibrary() {
     getCategories().then(setCategories)
   }, [])
 
-  // [新增] 頁面掛載 350ms 後才設為 Ready，讓進入動畫先跑完
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsReady(true)
@@ -115,20 +114,15 @@ export default function DataLibrary() {
     setRowSelection({}) 
   }
 
-  // [修改] 只有當 isReady 為 true 時才觸發數據加載
   useEffect(() => {
     if (!isReady) return; 
     loadData()
   }, [filters.month, isReady]) 
 
-  // [新增] 處理 Tab 切換邏輯：人為製造延遲
   const handleTabChange = (value) => {
     setActiveTab(value)
-    
-    // 如果切換回交易紀錄，先將動畫狀態設為 false
     if (value === "logs") {
         setIsTabAnimationDone(false)
-        // 等待 300ms (動畫結束) 後再允許渲染表格
         setTimeout(() => {
             setIsTabAnimationDone(true)
         }, 300)
@@ -177,59 +171,63 @@ export default function DataLibrary() {
     }
   }
 
-  const handleBatchUpdateCategory = async () => {
+  // [修改] 按下勾勾時，只負責開啟對話框，不執行邏輯
+  const handleBatchUpdateCategoryClick = () => {
     const selectedIndices = Object.keys(rowSelection).map(Number)
     if (selectedIndices.length === 0 || !batchCategory) return
-    
-    if(!confirm(`確定將選取的 ${selectedIndices.length} 筆資料類別改為「${batchCategory}」？`)) return
-
-    setLoading(true)
-    try {
-      const promises = selectedIndices.map(index => {
-        const log = tableLogs[index]
-        return updateLog(log.id, {
-            category_name: batchCategory,
-            amount: log.amount,
-            actual_type: log.actual_type,
-            note: log.note,
-            timestamp: log.timestamp
-        })
-      })
-      await Promise.all(promises)
-      await loadData()
-      toast.success(`成功更新 ${selectedIndices.length} 筆資料類別`)
-      setBatchCategory("") 
-    } catch (e) {
-        toast.error("批量修改失敗")
-    } finally {
-      setLoading(false)
-    }
+    setBatchConfirmType('category')
   }
 
-  const handleBatchUpdateDirection = async () => {
+  // [修改] 按下勾勾時，只負責開啟對話框，不執行邏輯
+  const handleBatchUpdateDirectionClick = () => {
     const selectedIndices = Object.keys(rowSelection).map(Number)
     if (selectedIndices.length === 0 || !batchDirection) return
+    setBatchConfirmType('direction')
+  }
+
+  // [新增] 真正執行批量修改的函式 (由 AlertDialog 呼叫)
+  const executeBatchUpdate = async () => {
+    // 關閉對話框
+    const type = batchConfirmType
+    setBatchConfirmType(null)
     
-    if(!confirm(`確定將選取的 ${selectedIndices.length} 筆資料類型改為「${batchDirection === 'Income' ? '收入' : '支出'}」？`)) return
+    const selectedIndices = Object.keys(rowSelection).map(Number)
+    if (selectedIndices.length === 0) return
 
     setLoading(true)
     try {
-      const promises = selectedIndices.map(index => {
-        const log = tableLogs[index]
-        return updateLog(log.id, {
-            category_name: log.category_name,
-            amount: log.amount,
-            actual_type: batchDirection,
-            note: log.note,
-            timestamp: log.timestamp
-        })
-      })
-      await Promise.all(promises)
+      if (type === 'category') {
+          const promises = selectedIndices.map(index => {
+            const log = tableLogs[index]
+            return updateLog(log.id, {
+                category_name: batchCategory,
+                amount: log.amount,
+                actual_type: log.actual_type,
+                note: log.note,
+                timestamp: log.timestamp
+            })
+          })
+          await Promise.all(promises)
+          toast.success(`成功更新 ${selectedIndices.length} 筆資料類別`)
+          setBatchCategory("") 
+      } else if (type === 'direction') {
+          const promises = selectedIndices.map(index => {
+            const log = tableLogs[index]
+            return updateLog(log.id, {
+                category_name: log.category_name,
+                amount: log.amount,
+                actual_type: batchDirection,
+                note: log.note,
+                timestamp: log.timestamp
+            })
+          })
+          await Promise.all(promises)
+          toast.success(`成功更新 ${selectedIndices.length} 筆資料類型`)
+          setBatchDirection("")
+      }
       await loadData()
-      toast.success(`成功更新 ${selectedIndices.length} 筆資料類型`)
-      setBatchDirection("")
     } catch (e) {
-        toast.error("批量修改失敗")
+        toast.error("批量修改失敗: " + e.message)
     } finally {
       setLoading(false)
     }
@@ -241,7 +239,6 @@ export default function DataLibrary() {
         <h2 className="text-2xl font-bold tracking-tight">資料庫管理 (Data Library)</h2>
       </div>
 
-      {/* [修改] 使用受控模式 (Controlled) 管理 Tabs */}
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
         <TabsList>
           <TabsTrigger value="logs">交易紀錄 (Logs)</TabsTrigger>
@@ -388,7 +385,6 @@ export default function DataLibrary() {
           <div className="w-full overflow-hidden border rounded-md bg-background shadow-sm relative min-h-[400px]">
             <AnimatePresence mode="wait">
               {(!isReady || !isTabAnimationDone) ? (
-                // Loading 狀態：加上淡出動畫
                 <motion.div
                   key="loading"
                   initial={{ opacity: 0 }}
@@ -398,12 +394,10 @@ export default function DataLibrary() {
                   className="absolute inset-0 flex items-center justify-center text-muted-foreground"
                 >
                   <div className="flex flex-col items-center gap-2">
-                    {/* 可以加個簡單的 Spinner icon */}
                     <span className="animate-pulse">載入交易紀錄...</span>
                   </div>
                 </motion.div>
               ) : (
-                // 表格內容：加上滑入淡入動畫 (Slide Up + Fade In)
                 <motion.div
                   key="content"
                   initial={{ opacity: 0, y: 10 }}
@@ -430,6 +424,7 @@ export default function DataLibrary() {
         </TabsContent>
       </Tabs>
       
+      {/* 浮動工具列 */}
       {isSelectionMode && Object.keys(rowSelection).length > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-4xl bg-primary text-primary-foreground p-4 rounded-lg shadow-xl flex flex-wrap items-center gap-4 z-50 animate-in slide-in-from-bottom-5">
             <span className="font-semibold whitespace-nowrap">
@@ -438,6 +433,7 @@ export default function DataLibrary() {
             
             <div className="h-6 w-px bg-primary-foreground/30 mx-2 hidden sm:block"></div>
 
+            {/* 批量刪除 Dialog */}
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="default" size="sm" className="bg-primary-foreground text-primary hover:bg-primary-foreground/90">
@@ -471,7 +467,8 @@ export default function DataLibrary() {
                         {categories.map(c => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
                     </SelectContent>
                 </Select>
-                <Button size="icon" variant="secondary" className="h-8 w-8" onClick={handleBatchUpdateCategory} disabled={!batchCategory}>
+                {/* [修改] 點擊後改為觸發 Dialog */}
+                <Button size="icon" variant="secondary" className="h-8 w-8" onClick={handleBatchUpdateCategoryClick} disabled={!batchCategory}>
                     <Check className="w-4 h-4" />
                 </Button>
             </div>
@@ -486,13 +483,35 @@ export default function DataLibrary() {
                         <SelectItem value="Expenditure">支出</SelectItem>
                     </SelectContent>
                 </Select>
-                <Button size="icon" variant="secondary" className="h-8 w-8" onClick={handleBatchUpdateDirection} disabled={!batchDirection}>
+                {/* [修改] 點擊後改為觸發 Dialog */}
+                <Button size="icon" variant="secondary" className="h-8 w-8" onClick={handleBatchUpdateDirectionClick} disabled={!batchDirection}>
                     <Check className="w-4 h-4" />
                 </Button>
             </div>
 
         </div>
       )}
+
+      {/* [新增] 這是控制批量修改的 Alert Dialog */}
+      <AlertDialog open={!!batchConfirmType} onOpenChange={(open) => !open && setBatchConfirmType(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>確認批量修改</AlertDialogTitle>
+                <AlertDialogDescription>
+                    {batchConfirmType === 'category' 
+                        ? `確定將選取的 ${Object.keys(rowSelection).length} 筆資料類別改為「${batchCategory}」？`
+                        : `確定將選取的 ${Object.keys(rowSelection).length} 筆資料類型改為「${batchDirection === 'Income' ? '收入' : '支出'}」？`
+                    }
+                    <br/>
+                    此操作將會直接修改資料庫內容。
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>取消</AlertDialogCancel>
+                <AlertDialogAction onClick={executeBatchUpdate}>確認修改</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <EditTransactionDialog 
         open={editDialogOpen} 
