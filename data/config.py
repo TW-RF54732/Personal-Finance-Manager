@@ -9,9 +9,9 @@ class Settings:
     _defaults = {
         "sql_url": "sqlite:///DB/test.db",
         "goul_path": "./data/goal.json",
-        "LLM_model_path": r"./",
+        "LLM_model_path": r"請輸入gguf模型位置",
         "n_ctx": 0,
-        "n_threads": 8,
+        "n_threads": 16,
         "default_system_prompt": """你是一位專業財務顧問，只提供高效、精確且不廢話的財務洞察。請只用繁體中文
 [要求]
 1. 找出一個最需要削減的支出類別。

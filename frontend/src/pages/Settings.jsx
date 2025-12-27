@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
 import { fetchSystemSettings, updateSystemSettings, fetchGoalSettings, updateGoalSettings } from "@/lib/api"
 import { toast } from "sonner"
-import { IconDeviceFloppy, IconLoader2, IconTargetArrow, IconSettings } from "@tabler/icons-react"
+import { IconDeviceFloppy, IconLoader2, IconTargetArrow, IconSettings, IconRefresh } from "@tabler/icons-react"
 
 export default function Settings() {
   const [loading, setLoading] = useState(false)
@@ -44,12 +44,12 @@ export default function Settings() {
     loadData()
   }, [])
 
-  // 儲存系統設定
+  // 動作：儲存系統設定
   const handleSystemSave = async () => {
     setLoading(true)
     try {
       await updateSystemSettings(systemConfig)
-      toast.success("系統設定已更新")
+      toast.success("系統設定已更新 (請視需要重啟資料庫)")
     } catch (e) {
       toast.error("更新失敗: " + e.message)
     } finally {
@@ -57,7 +57,7 @@ export default function Settings() {
     }
   }
 
-  // 儲存目標設定
+  // 動作：儲存目標設定
   const handleGoalSave = async () => {
     setLoading(true)
     try {
@@ -69,6 +69,28 @@ export default function Settings() {
       toast.success("財務目標已更新")
     } catch (e) {
       toast.error("更新失敗: " + e.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // 動作：重啟資料庫連線 (不需重啟後端伺服器)
+  const handleRestartDB = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/system/restart-db', {
+        method: 'POST',
+      });
+      
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ detail: response.statusText }));
+        throw new Error(err.detail || 'Restart failed');
+      }
+
+      const data = await response.json();
+      toast.success(`資料庫已重連: ${data.url}`);
+    } catch (e) {
+      toast.error("重連失敗: " + e.message);
     } finally {
       setLoading(false)
     }
@@ -155,8 +177,22 @@ export default function Settings() {
               
               {/* 資料庫設定 */}
               <div className="space-y-4">
-                <h3 className="text-sm font-medium text-muted-foreground">資料庫 (Database)</h3>
+                <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-medium text-muted-foreground">資料庫 (Database)</h3>
+                    {/* 重啟按鈕 */}
+                    <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={handleRestartDB} 
+                        disabled={loading}
+                        className="h-8"
+                    >
+                        <IconRefresh className={`mr-2 h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+                        重啟連線
+                    </Button>
+                </div>
                 <Separator />
+                
                 <div className="grid gap-2">
                   <Label htmlFor="sql-url">資料庫連線字串 (SQL URL)</Label>
                   <Input 
@@ -165,6 +201,9 @@ export default function Settings() {
                     onChange={(e) => setSystemConfig({...systemConfig, sql_url: e.target.value})}
                     placeholder="sqlite:///./finance.db"
                   />
+                  <p className="text-[0.8rem] text-muted-foreground">
+                    若修改路徑，請先按右下角「儲存設定」，再點擊上方「重啟連線」以套用新資料庫。
+                  </p>
                 </div>
               </div>
 

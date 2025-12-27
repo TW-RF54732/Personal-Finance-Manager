@@ -17,7 +17,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import LogoImage from "@/assets/LOGO.png"
+import LogoImage from "@/assets/logoBig.png"
 import UserAvatar from "@/assets/testAvatar.jpg"
 
 // 1. 修改 URL 與 使用者資料

@@ -19,7 +19,7 @@ import {
 
 // [新增] 1. 引入動畫庫與 Logo
 import { motion } from "framer-motion"
-import LogoImage from "@/assets/LOGO.png"
+import LogoImage from "@/assets/logoBig.png"
 
 export default function LoginPage() {
   const navigate = useNavigate()
