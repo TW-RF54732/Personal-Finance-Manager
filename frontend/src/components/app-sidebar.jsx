@@ -29,18 +29,17 @@ const data = {
   navMain: [
     {
       title: "Dashboard",
-      url: "/",        // 改為根目錄
+      url: "/",
       icon: IconDashboard,
     },
-    // 你也可以把 Analytics 指向 Dashboard 或另外做
     {
       title: "Analytics",
-      url: "/", 
+      url: "/analytics", 
       icon: IconChartBar,
     },
     {
       title: "Data Library",
-      url: "/library", // 改為 /library
+      url: "/library", 
       icon: IconDatabase,
     },
   ],
@@ -54,7 +53,6 @@ const data = {
 }
 
 export function AppSidebar({ ...props }) {
-  // ... (下方程式碼保持不變，直接 return Sidebar 結構)
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>

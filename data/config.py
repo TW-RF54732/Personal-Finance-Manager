@@ -5,7 +5,7 @@ goul_path = './data/goal.json'
 """
 大語言模型設定
 """
-LLM_model_path = r""
+LLM_model_path = r"D:\Projects\copySoul\copySoul\core\llm\models\L3-8B-Stheno-v3.2-Q5_K_S.gguf"
 n_ctx = int(0) #報告摘要通常在 500-1000 tokens 以內, 0 為自動使用模型最大上下文
 n_threads = int(8) #CPU 核心數
 

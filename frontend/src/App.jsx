@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react"
-// [重要] 請確保你有安裝 react-router-dom，如果之前沒裝，請執行 npm install react-router-dom
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
@@ -8,6 +7,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 // 引入分頁
 import Dashboard from "@/pages/Dashboard"
 import DataLibrary from "@/pages/DataLibrary"
+import Analytics from "@/pages/Analytics"
 
 export default function App() {
   return (
@@ -15,7 +15,6 @@ export default function App() {
       <SidebarProvider
         defaultOpen={true}
         style={{
-          // [修改] 將原本的 72 改為 16rem (或是 15rem)，這樣會更緊湊，剛好容納 user@example.com
           "--sidebar-width": "13rem", 
           "--header-height": "calc(var(--spacing) * 12)",
         }}
@@ -30,6 +29,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/library" element={<DataLibrary />} />
+            <Route path="/analytics" element={<Analytics />} />
           </Routes>
 
         </SidebarInset>

@@ -1,6 +1,8 @@
 import axios from "axios";
 
+// 自動判斷環境：打包後使用相對路徑，開發時使用絕對路徑
 const API_URL = import.meta.env.PROD ? "" : "http://127.0.0.1:8000";
+
 // --- 報表與數據獲取 ---
 
 export const fetchAnalysisReport = async (startDate, endDate) => {
@@ -13,6 +15,22 @@ export const fetchAnalysisReport = async (startDate, endDate) => {
   } catch (error) {
     console.error("Fetch Analysis Error:", error);
     return null;
+  }
+};
+
+// [新增] 呼叫 AI 分析建議
+export const fetchAIAdvice = async (startDate, endDate, prompt = "") => {
+  try {
+    const response = await axios.post(`${API_URL}/api/analyze/get_analyze_report`, {
+      start_date_time: startDate,
+      end_date_time: endDate,
+      system_prompt: prompt || null // 如果是空字串傳 null，讓後端用預設值
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Fetch AI Advice Error:", error);
+    // 回傳錯誤結構以便前端顯示，避免頁面崩潰
+    return { status: "error", message: error.message || "無法連接伺服器" };
   }
 };
 
@@ -41,7 +59,7 @@ export const fetchMonthlyLogsForTable = async (startDate, endDate) => {
         start_date: startDate,
         end_date: endDate,
         sort_by: "timestamp",
-        reverse: true, // 表格要看最新的
+        reverse: true, 
         limit: 1000,
       },
     });
@@ -100,6 +118,8 @@ export const createCategory = async (name, type) => {
   });
   return response.data;
 };
+
+// 進階篩選
 export const fetchFilteredLogs = async (params) => {
   // params: { category_name, min_amount, max_amount, start_date, end_date, note_keyword, sort_by, reverse }
   try {
@@ -111,16 +131,14 @@ export const fetchFilteredLogs = async (params) => {
   }
 };
 
-
-// [新增] 修改交易
+// 修改交易
 export const updateLog = async (logId, logData) => {
   // logData: { category_name, amount, actual_type, note, timestamp }
   const response = await axios.put(`${API_URL}/api/database/logs/${logId}`, logData);
   return response.data;
 };
 
-
-// [新增] 修改類別
+// 修改類別
 export const updateCategory = async (id, name, type) => {
   const response = await axios.put(`${API_URL}/api/database/categories/${id}`, {
     name: name,
@@ -129,7 +147,7 @@ export const updateCategory = async (id, name, type) => {
   return response.data;
 };
 
-// [新增] 刪除類別 (後端 API 是依名稱刪除)
+// 刪除類別
 export const deleteCategory = async (name) => {
   const response = await axios.delete(`${API_URL}/api/database/categories/${name}`);
   return response.data;
