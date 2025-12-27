@@ -34,7 +34,7 @@ export function SectionCards({ income, expense, netSavings, savingsRate, goalDat
     // [修改] 調整 Grid 斷點：
     // sm:grid-cols-2 -> 平板/小筆電時顯示 2 欄 (避免太擠)
     // xl:grid-cols-4 -> 只有在大螢幕 (1280px+) 才顯示 4 欄
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 animate-in fade-in slide-in-from-top-8 duration-700">
       
       {/* 1. 總收入 */}
       <Card>

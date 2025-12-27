@@ -1,7 +1,7 @@
 import json
 from llama_cpp import Llama
 
-from data.config import n_ctx,temperature,max_tokens
+from data.config import settings
 
 class FinanceAdvisorLLM:
     def __init__(self, model_path: str, n_threads: int = 8):
@@ -12,7 +12,7 @@ class FinanceAdvisorLLM:
         """
         self.llm = Llama(
             model_path=model_path,
-            n_ctx=n_ctx,          # 
+            n_ctx=settings.n_ctx,          # 
             n_threads=n_threads, # 建議設為實體核心數
             verbose=False
         )
@@ -29,8 +29,8 @@ class FinanceAdvisorLLM:
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": prompt}
             ],
-            temperature=temperature,  # 保持一致性
-            max_tokens=max_tokens
+            temperature=settings.temperature,  # 保持一致性
+            max_tokens=settings.max_tokens
         )
         return response["choices"][0]["message"]["content"]
 

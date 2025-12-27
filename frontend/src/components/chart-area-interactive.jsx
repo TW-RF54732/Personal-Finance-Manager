@@ -123,7 +123,10 @@ export function ChartAreaInteractive({ rawLogs = [] }) {
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
         <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full">
-          <AreaChart data={chartData}>
+          <AreaChart 
+            key={chartData.length > 0 ? JSON.stringify(chartData) : 'empty'}
+            data={chartData}
+          >
             <defs>
               {/* 黑色漸層 (收入) */}
               <linearGradient id="fillIncome" x1="0" y1="0" x2="0" y2="1">
@@ -163,6 +166,10 @@ export function ChartAreaInteractive({ rawLogs = [] }) {
               stroke="var(--color-expense)"
               fillOpacity={0.4}
               strokeWidth={2}
+
+              isAnimationActive={true}
+              animationDuration={1000}
+              animationEasing="ease-in-out"
             />
             
             {/* 黑色區域 (收入) */}
@@ -173,6 +180,10 @@ export function ChartAreaInteractive({ rawLogs = [] }) {
               stroke="var(--color-income)"
               fillOpacity={0.4}
               strokeWidth={2}
+
+              isAnimationActive={true}
+              animationDuration={1000}
+              animationEasing="ease-in-out"
             />
             
           </AreaChart>

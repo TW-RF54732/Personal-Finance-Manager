@@ -5,16 +5,24 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { getCategories, createCategory, updateCategory, deleteCategory } from "@/lib/api"
 import { Trash2, Edit2, Plus, Save, X, ArrowUpDown } from "lucide-react"
+import { toast } from "sonner"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 export function CategoryManager() {
   const [categories, setCategories] = useState([])
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState(null)
-  
-  // 排序狀態: "asc" (升冪) 或 "desc" (降冪)
   const [sortOrder, setSortOrder] = useState("asc")
-
-  // 新增/編輯用的暫存狀態
   const [tempData, setTempData] = useState({ name: "", default_type: "Expenditure" })
 
   const loadCategories = async () => {
@@ -24,46 +32,45 @@ export function CategoryManager() {
 
   useEffect(() => { loadCategories() }, [])
 
-  // 排序邏輯：根據 ID 進行排序
   const sortedCategories = [...categories].sort((a, b) => {
-    if (sortOrder === "asc") {
-      return a.id - b.id
-    } else {
-      return b.id - a.id
-    }
+    return sortOrder === "asc" ? a.id - b.id : b.id - a.id
   })
 
-  // 切換排序函式
-  const toggleSort = () => {
-    setSortOrder(prev => prev === "asc" ? "desc" : "asc")
-  }
+  const toggleSort = () => setSortOrder(prev => prev === "asc" ? "desc" : "asc")
 
-  // 處理新增
   const handleCreate = async () => {
-    if (!tempData.name) return alert("請輸入名稱")
-    await createCategory(tempData.name, tempData.default_type)
-    setIsAdding(false)
-    setTempData({ name: "", default_type: "Expenditure" })
-    loadCategories()
+    if (!tempData.name) return toast.error("請輸入名稱")
+    
+    try {
+      await createCategory(tempData.name, tempData.default_type)
+      setIsAdding(false)
+      setTempData({ name: "", default_type: "Expenditure" })
+      loadCategories()
+      toast.success("類別新增成功")
+    } catch (e) {
+      toast.error("新增失敗: " + e.message)
+    }
   }
 
-  // 處理更新
   const handleUpdate = async (id) => {
-    if (!tempData.name) return alert("請輸入名稱")
-    await updateCategory(id, tempData.name, tempData.default_type)
-    setEditingId(null)
-    loadCategories()
+    if (!tempData.name) return toast.error("請輸入名稱")
+    try {
+      await updateCategory(id, tempData.name, tempData.default_type)
+      setEditingId(null)
+      loadCategories()
+      toast.success("類別更新成功")
+    } catch (e) {
+      toast.error("更新失敗: " + e.message)
+    }
   }
 
-  // 處理刪除
   const handleDelete = async (name) => {
-    if (confirm(`確定要刪除類別「${name}」嗎？`)) {
-      try {
-        await deleteCategory(name)
-        loadCategories()
-      } catch (e) {
-        alert("刪除失敗，可能此類別尚有交易紀錄")
-      }
+    try {
+      await deleteCategory(name)
+      loadCategories()
+      toast.success("類別刪除成功")
+    } catch (e) {
+      toast.error("刪除失敗，可能此類別尚有交易紀錄")
     }
   }
 
@@ -76,19 +83,17 @@ export function CategoryManager() {
         </Button>
       </div>
 
-      <div className="border rounded-md">
+      <div className="border rounded-md overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow>
-              {/* [修正] 移除了 -ml-4，改用 h-8 px-2 讓按鈕乖乖待在單元格內 */}
+            <TableRow className="bg-muted/50">
               <TableHead className="w-[100px]">
                 <Button 
                   variant="ghost" 
                   onClick={toggleSort}
-                  className="h-8 px-2 hover:bg-accent hover:text-accent-foreground"
+                  className="h-8 px-2 hover:bg-background"
                 >
-                  ID
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
+                  ID <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
               </TableHead>
               <TableHead>類別名稱</TableHead>
@@ -97,33 +102,35 @@ export function CategoryManager() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {/* 新增模式列 */}
             {isAdding && (
-              <TableRow className="bg-muted/50">
+              <TableRow className="bg-muted/30 animate-in slide-in-from-top-2">
                 <TableCell>-</TableCell>
                 <TableCell>
-                  <Input value={tempData.name} onChange={e => setTempData({...tempData, name: e.target.value})} placeholder="名稱" />
+                  <Input value={tempData.name} onChange={e => setTempData({...tempData, name: e.target.value})} placeholder="名稱" className="bg-background" />
                 </TableCell>
                 <TableCell>
                   <Select value={tempData.default_type} onValueChange={v => setTempData({...tempData, default_type: v})}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="bg-background"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Expenditure">支出</SelectItem>
                       <SelectItem value="Income">收入</SelectItem>
                     </SelectContent>
                   </Select>
                 </TableCell>
-                <TableCell className="text-right space-x-2">
-                  <Button size="icon" variant="ghost" onClick={handleCreate}><Save className="w-4 h-4 text-green-600"/></Button>
-                  <Button size="icon" variant="ghost" onClick={() => setIsAdding(false)}><X className="w-4 h-4 text-red-600"/></Button>
+                <TableCell className="text-right space-x-1">
+                  <Button size="icon" variant="ghost" onClick={handleCreate} className="hover:bg-primary/10">
+                    <Save className="w-4 h-4 text-primary"/>
+                  </Button>
+                  <Button size="icon" variant="ghost" onClick={() => setIsAdding(false)} className="hover:bg-primary/10">
+                    <X className="w-4 h-4 text-primary"/>
+                  </Button>
                 </TableCell>
               </TableRow>
             )}
 
-            {/* 資料列表：使用 sortedCategories 進行渲染 */}
             {sortedCategories.map((cat) => (
-              <TableRow key={cat.id}>
-                <TableCell>{cat.id}</TableCell>
+              <TableRow key={cat.id} className="group">
+                <TableCell className="font-mono text-muted-foreground">{cat.id}</TableCell>
                 <TableCell>
                   {editingId === cat.id ? (
                     <Input value={tempData.name} onChange={e => setTempData({...tempData, name: e.target.value})} />
@@ -140,20 +147,45 @@ export function CategoryManager() {
                    </Select>
                   ) : (cat.default_type === "Income" ? "收入" : "支出")}
                 </TableCell>
-                <TableCell className="text-right space-x-2">
+                <TableCell className="text-right space-x-1">
                   {editingId === cat.id ? (
                     <>
-                      <Button size="icon" variant="ghost" onClick={() => handleUpdate(cat.id)}><Save className="w-4 h-4 text-green-600"/></Button>
-                      <Button size="icon" variant="ghost" onClick={() => setEditingId(null)}><X className="w-4 h-4"/></Button>
+                      <Button size="icon" variant="ghost" onClick={() => handleUpdate(cat.id)} className="hover:bg-primary/10">
+                        <Save className="w-4 h-4 text-primary"/>
+                      </Button>
+                      <Button size="icon" variant="ghost" onClick={() => setEditingId(null)} className="hover:bg-muted">
+                        <X className="w-4 h-4 text-muted-foreground"/>
+                      </Button>
                     </>
                   ) : (
                     <>
-                      <Button size="icon" variant="ghost" onClick={() => { setEditingId(cat.id); setTempData({name: cat.name, default_type: cat.default_type}) }}>
+                      <Button size="icon" variant="ghost" onClick={() => { setEditingId(cat.id); setTempData({name: cat.name, default_type: cat.default_type}) }} className="opacity-70 group-hover:opacity-100 transition-opacity">
                         <Edit2 className="w-4 h-4 text-primary"/>
                       </Button>
-                      <Button size="icon" variant="ghost" onClick={() => handleDelete(cat.name)}>
-                        <Trash2 className="w-4 h-4 text-primary"/>
-                      </Button>
+                      
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          {/* [修改] 移除紅色，改用 Primary */}
+                          <Button size="icon" variant="ghost" className="opacity-70 group-hover:opacity-100 transition-opacity hover:bg-primary/10">
+                            <Trash2 className="w-4 h-4 text-primary"/>
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>確定要刪除類別「{cat.name}」嗎？</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              此動作無法復原。如果此類別下已有交易紀錄，刪除可能會失敗。
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>取消</AlertDialogCancel>
+                            {/* [修改] 確認按鈕改用 Default (Primary) */}
+                            <AlertDialogAction onClick={() => handleDelete(cat.name)}>
+                              刪除
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </>
                   )}
                 </TableCell>

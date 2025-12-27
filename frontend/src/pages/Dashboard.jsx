@@ -114,10 +114,10 @@ export default function Dashboard() {
         />
         
         <div className="flex flex-col gap-6">
-          <div className="w-full">
+          <div className="w-full fill-mode-both">
             <ChartAreaInteractive rawLogs={chartLogs} />
           </div>
-          <div className="w-full overflow-hidden">
+          <div className="w-full overflow-hidden animate-in fade-in slide-in-from-top-8 duration-700 delay-300 fill-mode-both">
             <DataTable columns={columns} data={tableLogs} />
           </div>
         </div>

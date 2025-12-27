@@ -7,7 +7,7 @@ import gc
 from dataBase.FinanceDB import FinanceDB, FinanceService
 from LLM.analyis import FinanceAnalysisEngine
 from LLM.advice import FinanceAdvisorLLM
-from data.config import LLM_model_path,default_system_prompt
+from data.config import settings
 router = APIRouter()
 
 class ReportRequest(BaseModel):
@@ -37,10 +37,10 @@ async def generate_analysis_report(
 
     # --- 新增邏輯：決定 Prompt ---
     # 如果前端有傳入 system_prompt (且不是空字串)，就使用前端的；否則使用 default_system_prompt
-    use_prompt = report_args.system_prompt if report_args.system_prompt else default_system_prompt
+    use_prompt = report_args.system_prompt if report_args.system_prompt else settings.default_system_prompt
     print(use_prompt)
     # 2. 載入模型 (隨用隨載策略)
-    model_path = LLM_model_path # 建議改為從 config 讀取
+    model_path = settings.LLM_model_path # 建議改為從 config 讀取
     
     advice_content = ""
     advisor = None # 先宣告變數，避免 try 區塊出錯導致 finally 找不到變數
@@ -60,7 +60,6 @@ async def generate_analysis_report(
     return {
         "status": "success",
         "advice": advice_content,
-        # (選填) 可以回傳這個欄位讓前端知道最後是用預設還是自訂的 prompt
         "prompt_source": "custom" if report_args.system_prompt else "default"
     }
 

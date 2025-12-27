@@ -18,7 +18,6 @@ export const fetchAnalysisReport = async (startDate, endDate) => {
   }
 };
 
-// [新增] 呼叫 AI 分析建議
 export const fetchAIAdvice = async (startDate, endDate, prompt = "") => {
   try {
     const response = await axios.post(`${API_URL}/api/analyze/get_analyze_report`, {
@@ -151,4 +150,47 @@ export const updateCategory = async (id, name, type) => {
 export const deleteCategory = async (name) => {
   const response = await axios.delete(`${API_URL}/api/database/categories/${name}`);
   return response.data;
+};
+
+export const fetchSystemSettings = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/api/settings/system`);
+    return response.data;
+  } catch (error) {
+    console.error("Fetch System Settings Error:", error);
+    return null;
+  }
+};
+
+// 更新系統設定
+export const updateSystemSettings = async (settings) => {
+  try {
+    const response = await axios.put(`${API_URL}/api/settings/system`, settings);
+    return response.data;
+  } catch (error) {
+    console.error("Update System Settings Error:", error);
+    throw error;
+  }
+};
+
+// 取得目標設定
+export const fetchGoalSettings = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/api/settings/goal`);
+    return response.data;
+  } catch (error) {
+    console.error("Fetch Goal Settings Error:", error);
+    return { income: 0, expenditure: 0, total_save: 0 };
+  }
+};
+
+// 更新目標設定
+export const updateGoalSettings = async (goalData) => {
+  try {
+    const response = await axios.put(`${API_URL}/api/settings/goal`, goalData);
+    return response.data;
+  } catch (error) {
+    console.error("Update Goal Settings Error:", error);
+    throw error;
+  }
 };

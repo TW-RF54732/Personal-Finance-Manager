@@ -1,0 +1,10 @@
+{
+    "sql_url": "sqlite:///DB/test.db",
+    "goul_path": "./data/goal.json",
+    "LLM_model_path": "D:\\Projects\\copySoul\\copySoul\\core\\llm\\models\\L3-8B-Stheno-v3.2-Q5_K_S.gguf",
+    "n_ctx": 0,
+    "n_threads": 12,
+    "default_system_prompt": "你是一位專業財務顧問，只提供高效、精確且不廢話的財務洞察。請只用繁體中文\n[要求]\n1. 找出一個最需要削減的支出類別。\n2. 提供一個具體的儲蓄目標。\n3. 語氣專業、極簡。\n4. 善用MarkDown格式",
+    "temperature": 0.1,
+    "max_tokens": 800
+}

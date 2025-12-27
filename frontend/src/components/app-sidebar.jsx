@@ -18,13 +18,14 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import LogoImage from "@/assets/LOGO.png"
+import UserAvatar from "@/assets/testAvatar.jpg"
 
-// 1. 修改 URL
+// 1. 修改 URL 與 使用者資料
 const data = {
   user: {
-    name: "User",
-    email: "user@example.com",
-    avatar: "/avatars/shadcn.jpg",
+    name: "測試人員",
+    email: "tester@tester.com",
+    avatar: UserAvatar,
   },
   navMain: [
     {
@@ -46,7 +47,7 @@ const data = {
   navSecondary: [
     {
       title: "Settings",
-      url: "#",
+      url: "/settings",
       icon: IconSettings,
     },
   ],
@@ -64,18 +65,21 @@ export function AppSidebar({ ...props }) {
                   <img src={LogoImage} alt="Logo" className="size-6 object-contain invert" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">Finance App</span>
-                  <span className="truncate text-xs">v1.0.0</span>
+                  <span className="truncate font-semibold">FinBase</span>
+                  <span className="truncate text-xs">Finance Database</span>
                 </div>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
+
+      {/* [補回] 這裡是被遺漏的內容與頁尾 */}
       <SidebarContent>
         <NavMain items={data.navMain} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
+      
       <SidebarFooter>
         <NavUser user={data.user} />
       </SidebarFooter>
