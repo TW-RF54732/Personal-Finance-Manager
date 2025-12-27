@@ -148,7 +148,11 @@ export const updateCategory = async (id, name, type) => {
 
 // 刪除類別
 export const deleteCategory = async (name) => {
-  const response = await axios.delete(`${API_URL}/api/database/categories/${name}`);
+  const response = await axios.delete(`${API_URL}/api/database/categories`, {
+    params: {
+      name: name
+    }
+  });
   return response.data;
 };
 

@@ -11,9 +11,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs" // 引用你剛做好的 Tabs
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert" // 假設你有 Alert 組件，若無可換成 div
-import { createLog, createCategory, getCategories } from "@/lib/api" // 假設你有 createCategory
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs" 
+import { createLog, createCategory, getCategories } from "@/lib/api"
 import { Plus, AlertCircle } from "lucide-react"
 
 export function AddDialog({ onSuccess }) {
@@ -21,39 +20,54 @@ export function AddDialog({ onSuccess }) {
   const [activeTab, setActiveTab] = useState("log")
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null) // 統一錯誤狀態管理
+  const [error, setError] = useState(null) 
 
-  // Log 表單狀態
   const [logData, setLogData] = useState({
     amount: "",
     category_name: "",
     note: "",
     actual_type: "Expenditure",
-    date: new Date().toISOString().split('T')[0] // 預設今天
+    date: new Date().toISOString().split('T')[0] 
   })
 
-  // Category 表單狀態
   const [catData, setCatData] = useState({
     name: "",
     default_type: "Expenditure"
   })
 
-  // 開啟時載入類別 & 重置錯誤
   useEffect(() => {
     if (open) {
       getCategories().then(setCategories)
       setError(null)
     }
-  }, [open, activeTab]) // 切換 Tab 時也清除錯誤，避免混淆
+  }, [open, activeTab]) 
+
+  // [新增] 錯誤訊息解析 helper
+  const parseErrorMessage = (err) => {
+    if (err.response?.data?.detail) {
+      const detail = err.response.data.detail
+      // 如果 Pydantic 回傳的是陣列 (Validation Error)
+      if (Array.isArray(detail)) {
+        return detail.map(d => d.msg).join(", ")
+      }
+      // 如果是物件或其他
+      if (typeof detail === 'object') {
+        return JSON.stringify(detail)
+      }
+      return String(detail)
+    }
+    return err.message || "發生未知錯誤"
+  }
 
   const handleLogSubmit = async () => {
     if (!logData.amount || !logData.category_name) {
       setError("請填寫金額與類別")
       return
     }
-    // 簡單驗證：支出金額若為負數提示 (視你邏輯而定)
-    if (logData.actual_type === 'Expenditure' && parseFloat(logData.amount) < 0) {
-        setError("金額不得小於 0。若為支出請選擇「支出」類型，數值請填寫正數。")
+    
+    // 前端先擋下明顯錯誤，但後端也會擋
+    if (parseFloat(logData.amount) <= 0) {
+        setError("金額必須大於 0")
         return
     }
 
@@ -65,10 +79,11 @@ export function AddDialog({ onSuccess }) {
         amount: parseFloat(logData.amount)
       })
       setOpen(false)
-      setLogData({ ...logData, amount: "", note: "" }) // 保留部分設定方便連續輸入
+      setLogData({ ...logData, amount: "", note: "" }) 
       if (onSuccess) onSuccess()
     } catch (err) {
-      setError(err.response?.data?.detail || err.message)
+      // [修改] 使用 helper 處理錯誤訊息，避免白屏
+      setError(parseErrorMessage(err))
     } finally {
       setLoading(false)
     }
@@ -82,12 +97,13 @@ export function AddDialog({ onSuccess }) {
     setLoading(true)
     setError(null)
     try {
-        await createCategory(catData) // 假設有這支 API
+        await createCategory(catData.name, catData.default_type)
         setOpen(false)
         setCatData({ name: "", default_type: "Expenditure" })
         if (onSuccess) onSuccess()
     } catch (err) {
-        setError(err.response?.data?.detail || err.message)
+        // [修改] 使用 helper 處理錯誤訊息，避免白屏
+        setError(parseErrorMessage(err))
     } finally {
         setLoading(false)
     }
@@ -103,7 +119,6 @@ export function AddDialog({ onSuccess }) {
         </Button>
       </DialogTrigger>
       
-      {/* 讓 Dialog 內容向上對齊一點，避免鍵盤跳出時被遮擋 */}
       <DialogContent className="sm:max-w-[425px] top-[10%] translate-y-0 sm:top-[20%] sm:translate-y-0">
         <DialogHeader>
           <DialogTitle>新增紀錄</DialogTitle>
@@ -112,10 +127,6 @@ export function AddDialog({ onSuccess }) {
           </DialogDescription>
         </DialogHeader>
 
-        {/* [修改 2] Tab 等寬設定 
-            w-full: 寬度滿版
-            grid grid-cols-2: 強制兩欄等寬
-        */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full grid grid-cols-2">
             <TabsTrigger value="log">新增 Log (交易)</TabsTrigger>
@@ -125,16 +136,15 @@ export function AddDialog({ onSuccess }) {
           {/* ==================== Log 表單 ==================== */}
           <TabsContent value="log" className="space-y-4 pt-4">
             
-            {/* [修改 3] 錯誤訊息放在 TabsContent 內部最上方，防止 Tabs 漂移 */}
             {error && (
                 <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md flex items-start gap-2">
                     <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                    {/* 這裡現在安全了，因為 error 已經保證是字串 */}
                     <span>{error}</span>
                 </div>
             )}
 
             <div className="grid gap-4">
-               {/* 第一列：類別、類型、日期 (三欄式) */}
                <div className="grid grid-cols-3 gap-3">
                   <div className="space-y-2">
                     <Label>類別</Label>
@@ -171,7 +181,6 @@ export function AddDialog({ onSuccess }) {
 
                   <div className="space-y-2">
                     <Label>日期</Label>
-                    {/* 這裡簡單用 input type="date"，也可以換成 DatePicker */}
                     <Input 
                         type="date" 
                         value={logData.date}
@@ -181,7 +190,6 @@ export function AddDialog({ onSuccess }) {
                   </div>
                </div>
 
-               {/* 第二列：金額 */}
                <div className="space-y-2">
                   <Label htmlFor="amount">金額</Label>
                   <Input
@@ -194,7 +202,6 @@ export function AddDialog({ onSuccess }) {
                   />
                </div>
 
-               {/* 第三列：備註 */}
                <div className="space-y-2">
                   <Label htmlFor="note">備註</Label>
                   <Input
@@ -216,7 +223,6 @@ export function AddDialog({ onSuccess }) {
           {/* ==================== Category 表單 ==================== */}
           <TabsContent value="category" className="space-y-4 pt-4">
              
-            {/* 錯誤訊息同樣放在這裡 */}
             {error && (
                 <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md flex items-start gap-2">
                     <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />

@@ -11,17 +11,17 @@ from api import settings as api_settings
 
 from dataBase.FinanceDB import FinanceDB,FinanceService
 from data.config import settings 
-# from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["*"], # 開發時方便，生產環境建議改為 ["http://localhost:5173"]
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # 開發時方便，生產環境建議改為 ["http://localhost:5173"]
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 db = FinanceDB(db_url=settings.sql_url, echo=False)
 service = FinanceService(db)

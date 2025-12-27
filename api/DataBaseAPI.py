@@ -93,12 +93,12 @@ async def update_category(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.delete("/categories/{name}")
+@router.delete("/categories")
 async def delete_category(
-    name: str, 
+    name: str = Query(..., description="要刪除的類別名稱"), 
     service: FinanceService = Depends(get_service)
 ):
-    """刪除類別 (依名稱)"""
+    """刪除類別 (依名稱，使用 Query Parameter 以支援特殊字元)"""
     success = service.delete_category(name)
     if not success:
         raise HTTPException(status_code=404, detail="Category not found or delete failed")
