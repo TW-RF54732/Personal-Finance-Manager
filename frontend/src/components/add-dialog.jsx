@@ -191,7 +191,14 @@ export function AddDialog({ onSuccess }) {
                     <Label>類別</Label>
                     <Select 
                       value={logData.category_name} 
-                      onValueChange={(val) => setLogData({...logData, category_name: val})}
+                      onValueChange={(val) => {
+                        const selectedCat = categories.find(c => c.name === val)
+                        setLogData({
+                          ...logData, 
+                          category_name: val,
+                          actual_type: selectedCat?.default_type || logData.actual_type
+                        })
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="選擇" />

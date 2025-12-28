@@ -27,7 +27,7 @@ app.add_middleware(
 db = FinanceDB(db_url=settings.sql_url, echo=False)
 service = FinanceService(db)
 
-DIST_DIR = os.path.join(os.path.dirname(__file__), "dist")
+DIST_DIR = os.path.join(os.path.dirname(__file__), "UI")
 
 app.dependency_overrides[DataBaseAPI.get_service] = lambda: service
 app.dependency_overrides[analyzer.get_service] = lambda: service
