@@ -1,0 +1,23 @@
+services:
+  finance-ai:
+    # 這裡將 build 改為詳細模式，以傳入參數
+    build:
+      context: .
+      args:
+        DEVICE: gpu  # 關鍵：啟用 GPU 安裝模式
+    container_name: finBase
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - N_GPU_LAYERS=-1
+      - PYTHONUNBUFFERED=1
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
