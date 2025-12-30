@@ -187,7 +187,7 @@ cython_debug/
 # /data/goal.json
 # /data/settings.json
 
-
+*.db
 # Logs
 logs
 *.log
