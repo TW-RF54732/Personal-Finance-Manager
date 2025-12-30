@@ -184,8 +184,8 @@ cython_debug/
 /localTest/
 /DB/
 /data/models/*
-/data/goal.json
-/data/settings.json
+# /data/goal.json
+# /data/settings.json
 
 
 # Logs
@@ -214,5 +214,5 @@ dist-ssr
 
 node_modules
 
-data/DB/*
-data/*.json
+# data/DB/*
+# data/*.json
