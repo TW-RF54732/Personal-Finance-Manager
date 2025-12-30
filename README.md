@@ -1,25 +1,24 @@
-[新手開發指引](https://github.com/TW-RF54732/Personal-Finance-Manager/blob/main/Dev_ReadMe.md)
 
 
-# 安裝指南
+# Personal Finance Database - FinBase
 
-本專案針對 **Windows 11** 與 **Python 3.11.9** 環境優化。
-核心依賴 `llama-cpp-python` 易因編譯環境不同而出錯，請務必按照以下順序操作。
+這是一個結合 **FastAPI** 後端與 **Local LLM (本地大語言模型)** 的個人財務管理系統。
+專案已容器化，整合 `llama-cpp-python` 與 `CUDA` 環境，支援 **自動化模型下載** 與 **GPU 加速**。
 
-## 1. 環境檢測
+## 📋 系統架構
 
-請確保終端機 (PowerShell) 中顯示正確版本：
+* **Backend**: FastAPI (Python 3.11)
+* **Database**: SQLite / PostgreSQL (透過 SQLAlchemy)
+* **AI Engine**: Llama-3-Taiwan-8B-Instruct (GGUF)
+* **Infrastructure**: Docker & Docker Compose (NVIDIA Container Toolkit)
 
-```powershell
-python --version
-# 應顯示 Python 3.11.9
-# 若非此版本，請使用 py -3.11 指令替代 python
+---
 
-```
+## 🚀 快速部署 (Docker 推薦)
 
-## 2. 專案設定
+此方法已包含自動化腳本，會自動建立資料夾並下載模型，**無需手動安裝 Python 環境**。
 
-下載並進入專案目錄：
+### 1. 下載專案
 
 ```powershell
 git clone https://github.com/TW-RF54732/Personal-Finance-Manager.git
@@ -27,115 +26,103 @@ cd Personal-Finance-Manager
 
 ```
 
-## 3. 建立並啟動虛擬環境 (推薦)
+### 2. 啟動服務
 
-為避免依賴衝突，強烈建議使用虛擬環境。
+#### ✅ 若您有 NVIDIA 顯卡 (RTX 3060/4090 等)
+
+本專案預設為 GPU 模式，請直接執行：
 
 ```powershell
-# 建立虛擬環境 (.venv)
-python -m venv .venv
+docker compose up --build
 
-# 啟動虛擬環境 (Windows PowerShell)
+```
+
+#### ⚠️ 若您是 Mac (M1/M2) 或 無顯卡用戶
+
+請務必先修改 `docker-compose.yml`，否則啟動會失敗：
+
+1. 將 `args: DEVICE: gpu` 改為 `DEVICE: cpu`。
+2. **刪除或註解掉** 整個 `deploy:` 區塊 (包含 resources/reservations/devices)。
+
+### 3. 等待初始化
+
+首次啟動時，系統會自動執行以下動作（視網速約需 5-10 分鐘）：
+
+1. 建立 `/data/DB` 與 `/data/models` 資料夾。
+2. 從 HuggingFace 自動下載 **Llama-3-Taiwan-8B-Instruct.Q5_K_M.gguf** (約 5.8GB)。
+3. 下載完成後，服務將自動啟動於 `http://localhost:8000`。
+
+---
+
+## ⚙️ 設定指南 (重要)
+
+服務啟動後，請前往 Web UI 的 **Settings (設定)** 頁面，填入以下 **Docker 內部路徑** 以確保連線正確：
+
+| 設定項目 | 值 (請直接複製) | 說明 |
+| --- | --- | --- |
+| **資料庫連線 (SQL URL)** | `sqlite:////app/data/DB/Finance.db` | 注意是 4 個斜線，代表根目錄 |
+| **模型路徑 (Model Path)** | `/app/data/models/Llama-3-Taiwan-8B-Instruct.Q5_K_M.gguf` | 系統自動下載的路徑 |
+
+> [!TIP]
+> 修改後請務必點擊 **「儲存設定」** 並 **「重啟連線」**。
+
+---
+
+## 🛠️ 手動開發環境 (非 Docker)
+
+若需在不使用 Docker 的情況下進行開發，請參考以下步驟。
+
+### 前置需求
+
+* Python 3.11.9
+* Visual Studio C++ Build Tools (Windows 必備)
+* CUDA Toolkit 12.x (若要使用 GPU)
+
+### 安裝步驟
+
+1. **建立虛擬環境**
+```powershell
+python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 
 ```
 
-> [!TIP]
-> 若出現 `禁止執行指令碼` 錯誤，請先執行：
-> `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process`
 
-## 4. 安裝依賴 (預設：CPU 模式)
-
-此模式相容性最高，無需安裝額外驅動，適合大多數開發測試。
-我們已在設定檔中指定了預編譯的 CPU Wheel，可直接安裝。
-
+2. **安裝依賴 (CPU 預設)**
 ```powershell
-# 升級 pip 以確保能解析 whl 檔
-python -m pip install --upgrade pip
-
-# 安裝所有依賴 (包含 llama-cpp-python CPU 版)
 pip install -r requirements.txt
 
 ```
 
----
 
-## 5. (選用) 啟用 NVIDIA GPU 加速
-
-若您擁有 NVIDIA 顯卡並已安裝 CUDA Toolkit，可透過以下步驟切換至 GPU 版本以提升推論速度。
-
-**前置要求：**
-
-* 已安裝 [CUDA Toolkit 12.x](https://developer.nvidia.com/cuda-downloads)
-* 已安裝 Microsoft Visual Studio (C++ 建置工具)
-
-**安裝指令：**
-請執行以下指令強制重新安裝支援 CUDA 的版本 (需覆蓋原本的 CPU 版)：
-
+3. **啟用 GPU 加速 (選用)**
+需移除 CPU 版並重新安裝支援 CUDA 的 `llama-cpp-python`：
 ```powershell
-# 解除安裝目前的 CPU 版本
 pip uninstall llama-cpp-python -y
-
-# 安裝支援 CUDA 12 的版本 (確保版本號與 requirements.txt 一致)
-# 注意：若您的 CUDA 版本為 11，請將 cu121 改為 cu117
 pip install llama-cpp-python==0.2.90 --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu121
 
 ```
 
-> [!NOTE]
-> 更多 GPU 版本對應表 (cu117, cu121, cu122 等) 請參閱官方庫 release 頁面。
+
+4. **啟動服務**
+```powershell
+uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+
+```
+
+
 
 ---
 
-## 6. 驗證安裝
+## 📝 常見問題
 
-執行以下指令測試是否載入成功：
-
-```powershell
-python -c "import llama_cpp; print('Llama-cpp installed successfully')"
-
-```
-
-## 7. LLM 模型準備
-
-本專案使用 `GGUF` 格式模型，請勿下載 PyTorch (`.bin`/`.pth`) 或 Safetensors 格式。
-
-### 步驟 1：建立模型目錄
-
-在專案根目錄建立 `models` 資料夾：
-
-```powershell
-mkdir ./data/models
-
-```
-
-### 步驟 2：下載模型
-
-請前往 Hugging Face 下載 GGUF 模型檔案。
-**推薦模型 (適合財務分析/中文能力佳)：**
-
-* **Llama-3-Taiwan-8B-Instruct-GGUF** (針對台灣繁體中文優化)
-* 下載連結: [nctu6
-/
-Llama3-TAIDE-LX-8B-Chat-Alpha1-GGUF](https://huggingface.co/nctu6/Llama3-TAIDE-LX-8B-Chat-Alpha1-GGUF) (示意，建議搜尋最新版)
-* 或者使用通用版: `Meta-Llama-3-8B-Instruct-GGUF`
+* **Q: 啟動時卡在 "Checking directories..." 或 "Downloading..."？**
+* A: 這是正常的，初次執行正在下載 5.8GB 的模型檔案，請耐心等待。
 
 
+* **Q: 顯示 `CUDA error` 或 `driver not found`？**
+* A: 請確認宿主機已安裝 NVIDIA 驅動，且 Docker Desktop 已啟用 WSL2 GPU 支援。若無顯卡，請改用 CPU 模式。
 
-**建議規格 (依據 16GB RAM)：**
 
-* **檔案名稱包含**: `Q4_K_M.gguf` (約 4-5 GB，速度快) 或 `Q5_K_M.gguf` (約 5-6 GB，精度較高)
-* **請勿下載**: `fp16` (檔案過大可能導致 OOM)
-
-### 步驟 3：配置路徑
-
-將下載的 `.gguf` 檔案放入 `data/models/` 或自訂資料夾中。
-確認你的配置檔 `data/config.py` 指向正確路徑：
-
-```python
-# 範例配置
-model_path = "./data/models/Llama-3-Taiwan-8B-Instruct.Q4_K_M.gguf"
-```
-
----
-
+* **Q: 資料存在哪裡？**
+* A: 所有資料（資料庫、模型）皆透過 Volume 掛載於專案根目錄的 `./data` 資料夾，移除容器不會導致資料遺失。
