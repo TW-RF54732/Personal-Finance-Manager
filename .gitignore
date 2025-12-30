@@ -214,4 +214,5 @@ dist-ssr
 
 node_modules
 
-data/
+data/DB/*
+data/*.json
