@@ -184,6 +184,8 @@ cython_debug/
 /localTest/
 /DB/
 /data/models/*
+/data/goal.json
+/data/settings.json
 
 
 # Logs
