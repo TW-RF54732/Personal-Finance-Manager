@@ -1,0 +1,26 @@
+# 1. 核心優化：忽略巨大檔案與資料 (這會解決 281s 卡頓問題)
+data/models/
+data/DB/
+*.db
+*.gguf
+
+# 2. 忽略前端源碼
+frontend/
+node_modules/
+
+# 3. 忽略 Python/系統垃圾檔案
+__pycache__/
+*.pyc
+.git/
+.gitignore
+.dockerignore
+.env
+venv/
+.venv/
+.vscode/
+.idea/
+
+# 4. 忽略 Docker 相關不需要複製進去的檔案
+docker-compose.yml
+Dockerfile
+README.md
