@@ -15,9 +15,10 @@ COPY requirements.txt .
 
 # 1. 安裝一般依賴 + HuggingFace 工具
 # [新增] pip install huggingface_hub 用於下載模型
-RUN grep -v "llama-cpp-python" requirements.txt | grep -v "extra-index-url" > req_base.txt && \
+RUN grep -v "llama-cpp-python" requirements.txt | \
+    grep -v "extra-index-url" > req_base.txt && \
     pip install --no-cache-dir -r req_base.txt && \
-    pip install huggingface_hub
+    pip install --no-cache-dir "huggingface_hub[cl]"
 
 # 2. 智慧安裝邏輯 (GPU/CPU)
 RUN if [ "$DEVICE" = "gpu" ]; then \

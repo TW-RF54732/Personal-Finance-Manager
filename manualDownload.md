@@ -114,10 +114,8 @@ mkdir ./data/models
 請前往 Hugging Face 下載 GGUF 模型檔案。
 **推薦模型 (適合財務分析/中文能力佳)：**
 
-* **Llama-3-Taiwan-8B-Instruct-GGUF** (針對台灣繁體中文優化)
-* 下載連結: [nctu6
-/
-Llama3-TAIDE-LX-8B-Chat-Alpha1-GGUF](https://huggingface.co/nctu6/Llama3-TAIDE-LX-8B-Chat-Alpha1-GGUF) (示意，建議搜尋最新版)
+* **llama-3-taiwan-8B-instruct-q5_k_m.ggufF** (針對台灣繁體中文優化)
+* 下載連結: [Llama-3-Taiwan-8B-Instruct-GGUF](https://huggingface.co/chienweichang/Llama-3-Taiwan-8B-Instruct-GGUF/tree/main)
 * 或者使用通用版: `Meta-Llama-3-8B-Instruct-GGUF`
 
 

@@ -7,9 +7,9 @@ SETTINGS_FILE = os.path.join(os.path.dirname(__file__), 'settings.json')
 class Settings:
     # 預設值
     _defaults = {
-        "sql_url": "sqlite:///DB/test.db",
+        "sql_url": "sqlite:///app/data/DB/test.db",
         "goul_path": "./data/goal.json",
-        "LLM_model_path": r"請輸入gguf模型位置",
+        "LLM_model_path": r"/app/data/models/llama-3-taiwan-8B-instruct-q5_k_m.gguf",
         "n_ctx": 0,
         "n_threads": 16,
         "default_system_prompt": """你是一位專業財務顧問，只提供高效、精確且不廢話的財務洞察。請只用繁體中文
