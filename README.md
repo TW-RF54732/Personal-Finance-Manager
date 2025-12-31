@@ -1,9 +1,3 @@
-這份 `README.md` 針對你的需求進行了重構。它強調了前置環境檢查、區分了 GPU/CPU 的 Docker 配置方式，並明確說明了 `/data` 目錄的運作邏輯與手動模型管理的注意事項。
-
-請將以下內容直接覆蓋專案根目錄的 `README.md`。
-
----
-
 # Personal Finance Database - FinBase
 
 這是一個結合 **FastAPI** 後端與 **Local LLM (本地大語言模型)** 的個人財務管理系統。
