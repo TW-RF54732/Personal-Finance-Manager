@@ -3,31 +3,77 @@
 這是一個結合 **FastAPI** 後端與 **Local LLM (本地大語言模型)** 的個人財務管理系統。
 專案已完全容器化，整合 `llama-cpp-python`，支援 **自動化模型下載** 與 **GPU (CUDA) 加速**。
 
+---
+
 ## 📋 系統需求與前置準備
 
-在開始之前，請確保您的環境滿足以下要求：
+本系統採用 Docker 容器化部署，**宿主機（您的電腦）無需安裝 Python 或 Conda**。
+在開始之前，請確保您的環境滿足以下軟體與硬體要求：
 
-### 軟體環境
+### 🛠️ 軟體環境 (必備)
 
-1. **Docker Desktop** (Windows/Mac) 或 **Docker Engine** (Linux)。
-2. **Windows 用戶必備**：
-* 啟用 **WSL 2** (Windows Subsystem for Linux)。
-* Docker Desktop 設定中需勾選 "Use the WSL 2 based engine"。
+請依據您的作業系統，確認已安裝以下工具。假設您是從一台乾淨的電腦開始：
 
+#### 1. 基礎工具 (所有用戶)
 
-3. **GPU 加速需求 (NVIDIA 顯卡用戶)**：
-* 宿主機需安裝最新版 **NVIDIA Driver**。
-* Windows 用戶：Docker Desktop 預設支援 WSL2 GPU 直通。
-* Linux 用戶：需安裝 **NVIDIA Container Toolkit**。
+* **Git**: 用於下載專案程式碼。
+* Windows/Mac/Linux: 請至 [Git 官網](https://git-scm.com/install/) 下載並安裝。
 
 
 
-### 硬體建議
+#### 2. 容器運行環境 (擇一安裝)
 
-* **RAM**: 至少 16GB (CPU 模式) 或 **VRAM**: 至少 6GB (GPU 模式)。
-* **硬碟空間**: 至少預留 10GB (包含 Docker Image 與 LLM 模型檔)。
+* **Windows / Mac 用戶**: 安裝 **Docker Desktop**。
+* **Windows 用戶特別注意**：
+1. 安裝時請確保勾選 **"Use WSL 2 instead of Hyper-V"** (推薦)。
+2. 系統需先啟用 **WSL 2** (Windows Subsystem for Linux)。
+3. 在 Docker Desktop 設定 (`Settings` > `General`) 中確認已勾選 **"Use the WSL 2 based engine"**。
+
+
+
+
+* **Linux 用戶**: 安裝 **Docker Engine** 與 **Docker Compose**。
+
+#### 3. GPU 加速支援 (僅 NVIDIA 顯卡用戶需要)
+
+若您計畫使用 GPU 加速 (Llama-3 運算)，宿主機必須滿足以下條件：
+
+* **通用需求**:
+* 宿主機必須安裝最新的 **NVIDIA Driver** (驅動程式)，請至 NVIDIA 官網下載。
+* *注意：容器內已包含 CUDA Toolkit，您無需在宿主機安裝 CUDA Toolkit，但必須有驅動。*
+
+
+* **Linux 用戶額外需求**:
+  *   必須安裝 **[NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)**，Docker 才能調用顯卡資源。
+
+
+* **Windows 用戶**:
+  *   Docker Desktop (WSL 2 模式) 預設已支援 GPU 直通，通常無需額外設定。
+
+
+
+### 💻 硬體建議
+
+* **CPU**: 建議 4 核心以上 (若無顯卡，建議 M1/M2/M3 或高效能 CPU)。
+* **RAM (記憶體)**:
+* **CPU 模式**: 至少 16GB (模型會佔用系統記憶體)。
+* **GPU 模式**: 系統記憶體至少 8GB。
+
+
+* **VRAM (顯示卡記憶體)**:
+* **GPU 模式**: 至少 **6GB** (推薦 8GB 以上以獲得最佳體驗)。
+
+
+* **硬碟空間**: 至少預留 **10GB** 可用空間 (包含 Docker Image 建置緩存與 LLM 模型檔)。
 
 ---
+
+### 修改重點說明：
+
+1. **加入 Git**：原本的指令有 `git clone`，但如果是一台全新的電腦，預設是沒有 Git 的，這符合您「沒有其他環境」的假設。
+2. **明確指出「無需 Python」**：這是 Docker 部署的最大優勢，寫出來可以讓使用者更放心。
+3. **細分 Linux 的 GPU 需求**：Linux 的 Docker Engine 原生不支援 GPU，必須安裝 `nvidia-container-toolkit` 才能讀懂 `docker-compose.yml` 裡的 `driver: nvidia`。這是 Linux 用戶最常卡關的地方。
+4. **區分 Driver 與 CUDA**：新手常誤以為要安裝幾 GB 的 CUDA Toolkit，但用 Docker 其實只要裝顯卡驅動 (Driver) 即可，這裡特別註明以減少使用者負擔。---
 
 ## 🚀 Docker 快速部署 (推薦)
 
@@ -99,12 +145,11 @@ docker compose up --build
 
 ```text
 /Personal-Finance-Manager
-└── /data
+└── /data          # Docker掛載子資料夾於容器中的/app/data
     ├── /DB        # 存放 SQLite 資料庫 (Finance.db)
     └── /models    # 存放 GGUF 模型檔
 
 ```
-
 * **關於資料庫 (`/data/DB`)**：
 * 系統會自動在 `/data/DB/` 下建立資料庫檔案。
 * **注意**：若您手動修改設定檔，請確保路徑指向 `/app/data/DB/您的檔名.db`。
@@ -113,7 +158,7 @@ docker compose up --build
 
 ### 2. 模型管理 (自動 vs 手動)
 
-#### 🤖 自動下載 (預設)
+####  自動下載 (預設)
 
 容器初次啟動時，若 `/data/models` 為空，腳本會自動從 HuggingFace 下載 `Llama-3-Taiwan-8B-Instruct` 模型 (約 5.8GB)。
 
@@ -134,7 +179,7 @@ docker compose up --build
 
 若您需要在本機直接運行 Python 環境進行開發，或不使用 Docker，請參閱詳細的手動安裝文件：
 
-👉 **[點擊查看：手動安裝與環境配置指南 (Manual Setup)](https://www.google.com/search?q=manualDownload.md)**
+👉 **[點擊查看：手動安裝與環境配置指南 (Manual Setup)](https://github.com/TW-RF54732/Personal-Finance-Manager/blob/main/manualDownload.md)**
 
 ---
 
