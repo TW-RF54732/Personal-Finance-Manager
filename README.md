@@ -119,8 +119,8 @@ services:
 ```
 
 ### 3. 啟動服務
-[!caution]
-執行docker指令時確保docker應用有在運行
+> [!WARNING]
+>　執行docker指令時確保docker應用有在運行
 ```powershell
 # --build 確保依照您的 GPU/CPU 設定重新建置映像檔
 docker compose up --build
