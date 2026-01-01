@@ -6,8 +6,8 @@ SETTINGS_FILE = os.path.join(os.path.dirname(__file__), 'settings.json')
 
 class Settings:
     # 預設值
-    _defaults = {
-        "sql_url": "sqlite:///app/data/DB/test.db",
+    _defaults = {# 這是預設給Docker環境的配置
+        "sql_url": "sqlite:////app/data/DB/test.db", 
         "goul_path": "./data/goal.json",
         "LLM_model_path": r"/app/data/models/llama-3-taiwan-8B-instruct-q5_k_m.gguf",
         "n_ctx": 0,
