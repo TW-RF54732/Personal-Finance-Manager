@@ -68,13 +68,6 @@
 
 ---
 
-### 修改重點說明：
-
-1. **加入 Git**：原本的指令有 `git clone`，但如果是一台全新的電腦，預設是沒有 Git 的，這符合您「沒有其他環境」的假設。
-2. **明確指出「無需 Python」**：這是 Docker 部署的最大優勢，寫出來可以讓使用者更放心。
-3. **細分 Linux 的 GPU 需求**：Linux 的 Docker Engine 原生不支援 GPU，必須安裝 `nvidia-container-toolkit` 才能讀懂 `docker-compose.yml` 裡的 `driver: nvidia`。這是 Linux 用戶最常卡關的地方。
-4. **區分 Driver 與 CUDA**：新手常誤以為要安裝幾 GB 的 CUDA Toolkit，但用 Docker 其實只要裝顯卡驅動 (Driver) 即可，這裡特別註明以減少使用者負擔。---
-
 ## 🚀 Docker 快速部署 (推薦)
 
 ### 1. 取得專案
@@ -126,7 +119,8 @@ services:
 ```
 
 ### 3. 啟動服務
-
+[!caution]
+執行docker指令時確保docker應用有在運行
 ```powershell
 # --build 確保依照您的 GPU/CPU 設定重新建置映像檔
 docker compose up --build
