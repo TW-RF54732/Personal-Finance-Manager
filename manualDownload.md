@@ -84,7 +84,7 @@ pip install -r requirements.txt
 
 ### 選項 B：NVIDIA GPU 加速模式
 
-若您有 NVIDIA 顯卡且已安裝 [CUDA Toolkit 12.x](https://developer.nvidia.com/cuda-downloads)。
+若您有 NVIDIA 顯卡且已安裝 [CUDA Toolkit 12.x](https://developer.nvidia.com/cuda-12-1-0-download-archive)。
 
 **關鍵步驟**：必須強制指定安裝支援 CUDA 的 `llama-cpp-python` 版本。
 
@@ -122,7 +122,6 @@ pip install llama-cpp-python==0.2.90 --extra-index-url https://abetlen.github.io
 在專案根目錄下執行：
 
 ```powershell
-mkdir data
 mkdir data\DB
 mkdir data\models
 
@@ -132,12 +131,10 @@ mkdir data\models
 
 本專案預設支援 **Llama-3-Taiwan-8B-Instruct**。
 
-* 
-**下載連結**：[HuggingFace - Llama-3-Taiwan-8B-Instruct-GGUF](https://huggingface.co/chienweichang/Llama-3-Taiwan-8B-Instruct-GGUF/tree/main) 
+* **下載連結**：[HuggingFace - Llama-3-Taiwan-8B-Instruct-GGUF](https://huggingface.co/chienweichang/Llama-3-Taiwan-8B-Instruct-GGUF/tree/main) 
 
 
-* 
-**推薦檔案**：`llama-3-taiwan-8B-instruct-q5_k_m.gguf` (兼顧速度與品質) 
+* **推薦檔案**：`llama-3-taiwan-8B-instruct-q5_k_m.gguf` (兼顧速度與品質) 
 
 
 * **存放位置**：將下載的 `.gguf` 檔案放入 `data\models\` 資料夾中。
@@ -157,23 +154,48 @@ hf_hub_download(
 
 ```
 
----
-
 ## 步驟 5：修改設定檔
 
-請開啟 `data/config.py` (或 `settings.json` 若您已啟用動態設定)，確保模型路徑指向您的本地路徑。
+請開啟 `data/config.py` (若您有 `data/settings.json` 則優先修改該檔案)，將路徑改為**本地相對路徑**。
 
-**注意**：Docker 環境的路徑是 `/app/data/...`，手動執行時請改為相對路徑。
+### 關鍵修改點：
 
-```python
-# 修改前 (Docker 路徑)
-# LLM_model_path = "/app/data/models/llama-3-taiwan-8B-instruct-q5_k_m.gguf"
+1. **資料庫 (`sql_url`)**：
+* Docker 版 (4 個斜線, 絕對路徑)：`sqlite:////app/data/DB/Finance.db`
+* **本地版 (3 個斜線, 相對路徑)**：`sqlite:///data/DB/Finance.db`
 
-# 修改後 (本地相對路徑)
-LLM_model_path = "./data/models/llama-3-taiwan-8B-instruct-q5_k_m.gguf"
+
+2. **模型 (`LLM_model_path`)**：
+* Docker 版：`/app/data/models/...`
+* **本地版**：`./data/models/...`
+
+
+
+### 修改範例
+
+**打開 `data/settings.json` (推薦) 或 `config.py`，修改為：**
+
+```json
+{
+    "sql_url": "sqlite:///data/DB/Finance.db",
+    "goul_path": "./data/goal.json",
+    "LLM_model_path": "./data/models/llama-3-taiwan-8B-instruct-q5_k_m.gguf",
+    "n_ctx": 0,
+    "n_threads": 8,
+    "default_system_prompt": "你是一位專業財務顧問...",
+    "temperature": 0.1,
+    "max_tokens": 800
+}
 
 ```
 
+> [!IMPORTANT]
+> **SQLAlchemy 路徑規則說明**：
+> * `sqlite:///` (3 個斜線) 代表 **相對路徑** (相對於執行 `uvicorn` 的目錄)。
+> * `sqlite:////` (4 個斜線) 代表 **絕對路徑** (如 Docker 內的 `/app/...` 或 Linux 的 `/home/...`)。
+> * **在 Windows 本地執行時，強烈建議使用 3 個斜線的相對路徑**，以避免 Windows 磁碟機代號 (C:/) 造成的路徑解析問題。
+> 
+>
 ---
 
 ## 步驟 6：啟動服務
