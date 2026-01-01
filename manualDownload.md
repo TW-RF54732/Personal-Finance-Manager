@@ -1,8 +1,3 @@
-這份手動安裝指南是基於您提供的 `Dockerfile`、`requirements.txt` 以及 `entrypoint.sh` 的邏輯，並結合您草擬的 Windows 安裝步驟整理而成。
-
-這份文件適合放入專案中作為 `manualDownload.md`，供不想使用 Docker 的開發者參考。
-
----
 
 # 🛠️ 手動安裝與環境配置指南 (Manual Setup)
 
