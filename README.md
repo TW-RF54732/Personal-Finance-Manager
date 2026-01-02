@@ -176,6 +176,9 @@ docker compose up --build
 👉 **[點擊查看：手動安裝與環境配置指南 (Manual Setup)](https://github.com/TW-RF54732/Personal-Finance-Manager/blob/main/manualDownload.md)**
 
 ---
+# 測試
+目前是測試版，登入帳密皆為'test'
+
 
 ## 📝 常見問題 (FAQ)
 
