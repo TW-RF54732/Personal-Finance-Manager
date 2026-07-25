@@ -1,7 +1,9 @@
 from sqlalchemy import create_engine, Column, Integer, String, Enum, ForeignKey, Float, DateTime
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
+from sqlalchemy.engine import make_url
 from datetime import datetime
 import enum
+from pathlib import Path
 
 Base = declarative_base()
 
@@ -43,6 +45,7 @@ class FinanceDB:
             db_url: 資料庫連接字串
             echo: 是否顯示 SQLAlchemy 執行的 SQL 語句"""
         try:
+            db_url = self._prepare_sqlite_url(db_url)
             self.engine = create_engine(db_url, echo=echo)
             Base.metadata.create_all(self.engine)
             Session = sessionmaker(bind=self.engine)
@@ -50,6 +53,25 @@ class FinanceDB:
         except Exception as e:
             print(f"初始化資料庫時發生錯誤：{str(e)}")
             raise
+
+    @staticmethod
+    def _prepare_sqlite_url(db_url: str):
+        """Resolve local SQLite paths from the project root and create the parent."""
+        url = make_url(db_url)
+        if url.get_backend_name() != "sqlite" or not url.database:
+            return url
+
+        if url.database == ":memory:" or url.database.startswith("file:"):
+            return url
+
+        db_path = Path(url.database)
+        if not db_path.is_absolute():
+            project_root = Path(__file__).resolve().parent.parent
+            db_path = project_root / db_path
+
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+        return url.set(database=db_path.resolve().as_posix())
+
     def close(self):
         """關閉資料庫連接"""
         self.session.close()

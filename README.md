@@ -1,194 +1,231 @@
-# Personal Finance Database - FinBase
+# FinBase
 
-這是一個結合 **FastAPI** 後端與 **Local LLM (本地大語言模型)** 的個人財務管理系統。
-專案已完全容器化，整合 `llama-cpp-python`，支援 **自動化模型下載** 與 **GPU (CUDA) 加速**。
+**A local-first personal finance product that turns transaction records into structured insights and locally generated financial advice.**
 
----
+FinBase is an end-to-end portfolio project I independently designed and implemented to demonstrate product thinking, full-stack engineering, data modeling, Local LLM integration, UI/UX design, and containerized delivery.
 
-## 📋 系統需求與前置準備
+> **Project status:** FinBase is a single-user portfolio product and technical case study. It is not maintained as a public SaaS, reusable package, or production-ready financial service.
 
-本系統採用 Docker 容器化部署，**宿主機（您的電腦）無需安裝 Python 或 Conda**。
-在開始之前，請確保您的環境滿足以下軟體與硬體要求：
+![FinBase dashboard showing monthly financial metrics, cumulative income and expense trends, and recent transactions](Docs/assets/readme/dashboard-overview.png)
 
-### 🛠️ 軟體環境 (必備)
+## What this project demonstrates
 
-請依據您的作業系統，確認已安裝以下工具。假設您是從一台乾淨的電腦開始：
+- **End-to-end product ownership:** turning a financial-management use case into a working interface, API, data model, analysis pipeline, and executable environment.
+- **Full-stack integration:** a React SPA communicates with FastAPI services backed by SQLAlchemy and SQLite.
+- **Applied Local LLM engineering:** deterministic financial calculations are transformed into a controlled prompt for a local GGUF model.
+- **Product and UI/UX decisions:** summaries, filters, batch operations, goals, and AI controls are organized around common user tasks.
+- **System delivery:** the frontend, backend, database, and model bootstrap process are packaged into a Docker-based runtime.
 
-#### 1. 基礎工具 (所有用戶)
+## Core product workflow
 
-* **Git**: 用於下載專案程式碼。
-* Windows/Mac/Linux: 請至 [Git 官網](https://git-scm.com/install/) 下載並安裝。
+1. Record income or expenses and organize them with reusable categories.
+2. Review monthly totals, savings rate, cumulative trends, and recent activity.
+3. Search, filter, edit, or batch-manage the underlying transaction data.
+4. Select an analysis period and optionally specify a financial concern.
+5. Generate deterministic statistics before asking the Local LLM to interpret them.
 
+The LLM is deliberately placed at the end of the workflow. It does not calculate balances or category totals; it receives a structured report and focuses on interpretation, prioritization, and actionable advice.
 
+## Product walkthrough
 
-#### 2. 容器運行環境 (擇一安裝)
+### Financial overview
 
-* **Windows / Mac 用戶**: 安裝 **Docker Desktop**。
-* **Windows 用戶特別注意**：
-1. 安裝時請確保勾選 **"Use WSL 2 instead of Hyper-V"** (推薦)。
-2. 系統需先啟用 **WSL 2** (Windows Subsystem for Linux)。
-3. 在 Docker Desktop 設定 (`Settings` > `General`) 中確認已勾選 **"Use the WSL 2 based engine"**。
+The Dashboard compresses the most important monthly signals into one view: total income, total expense, net savings, savings rate, cumulative trends, goals, and recent transactions. Month selection keeps the interface focused on a concrete review period.
 
+![FinBase dashboard with financial summary cards, cumulative trend chart, and transaction table](Docs/assets/readme/dashboard-overview.png)
 
+### Deterministic analytics and AI advice
 
+The Analytics workspace separates the statistical report from AI-generated advice. Users can select a month and add a custom focus without changing the underlying calculations.
 
-* **Linux 用戶**: 安裝 **Docker Engine** 與 **Docker Compose**。
+The deterministic layer calculates category distribution, average transaction value, high-frequency categories, and unusually large expenses. The model then explains the resulting structure instead of reasoning over raw database rows.
 
-#### 3. GPU 加速支援 (僅 NVIDIA 顯卡用戶需要)
+![FinBase analytics workspace with analysis controls, financial metrics, category distribution, consumption behavior, and notable transactions](Docs/assets/readme/ai-analytics.png)
 
-若您計畫使用 GPU 加速 (Llama-3 運算)，宿主機必須滿足以下條件：
+### Data management
 
-* **通用需求**:
-* 宿主機必須安裝最新的 **NVIDIA Driver** (驅動程式)，請至 NVIDIA 官網下載。
-* *注意：容器內已包含 CUDA Toolkit，您無需在宿主機安裝 CUDA Toolkit，但必須有驅動。*
+The Data Library supports filtering by month, direction, category, note keyword, amount range, and sort order. Selection mode enables batch category or direction changes while keeping destructive actions behind explicit confirmation.
 
+![FinBase Data Library in batch selection mode with filters and bulk actions](Docs/assets/readme/data-library-batch.png)
 
-* **Linux 用戶額外需求**:
-  *   必須安裝 **[NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)**，Docker 才能調用顯卡資源。
+### Local model configuration
 
+Runtime settings expose the database URL, GGUF model path, inference temperature, thread count, and default system prompt. This makes the AI behavior inspectable and adjustable instead of hiding it behind a fixed endpoint.
 
-* **Windows 用戶**:
-  *   Docker Desktop (WSL 2 模式) 預設已支援 GPU 直通，通常無需額外設定。
+![FinBase system settings showing database and Local LLM configuration](Docs/assets/readme/llm-settings.png)
 
+## System architecture
 
+FinBase is delivered as a React single-page application served by FastAPI. API routers delegate validation and business rules to the service layer, while analysis and generation remain separate from transaction persistence.
 
-### 💻 硬體建議
+```mermaid
+flowchart LR
+    User["User"] --> SPA["React SPA"]
 
-* **CPU**: 建議 4 核心以上 (若無顯卡，建議 M1/M2/M3 或高效能 CPU)。
-* **RAM (記憶體)**:
-* **CPU 模式**: 至少 16GB (模型會佔用系統記憶體)。
-* **GPU 模式**: 系統記憶體至少 8GB。
+    subgraph Container["Docker container"]
+        SPA --> API["FastAPI application"]
+        API --> DBRouter["Database and Goal APIs"]
+        API --> AnalyzeRouter["Analysis API"]
+        API --> SettingsRouter["Settings API"]
 
+        DBRouter --> Service["FinanceService"]
+        AnalyzeRouter --> Service
+        Service --> DataLayer["FinanceDB / SQLAlchemy"]
+        DataLayer --> SQLite[("SQLite")]
 
-* **VRAM (顯示卡記憶體)**:
-* **GPU 模式**: 至少 **6GB** (推薦 8GB 以上以獲得最佳體驗)。
+        AnalyzeRouter --> Engine["FinanceAnalysisEngine"]
+        Engine --> Advisor["FinanceAdvisorLLM"]
+        Advisor --> Llama["llama-cpp-python"]
+        Llama --> Model[("Local GGUF model")]
 
+        SettingsRouter --> Config[("JSON configuration")]
+    end
 
-* **硬碟空間**: 至少預留 **10GB** 可用空間 (包含 Docker Image 建置緩存與 LLM 模型檔)。
-
----
-
-## 🚀 Docker 快速部署 (推薦)
-
-### 1. 取得專案
-
-```powershell
-git clone https://github.com/TW-RF54732/Personal-Finance-Manager.git
-cd Personal-Finance-Manager
-
+    Volume["Mounted data volume"] --- SQLite
+    Volume --- Model
 ```
 
-### 2. 配置運行模式 (GPU vs CPU)
+### Main request and data flow
 
-預設設定為 **GPU 模式**。請根據您的硬體修改 `docker-compose.yml`：
+- The frontend uses JSON APIs for transaction CRUD, filtered queries, goal reports, system settings, and analysis requests.
+- FastAPI dependency overrides inject a shared `FinanceService` into database, goal, and analysis routes.
+- `FinanceService` owns domain validation and response formatting; `FinanceDB` owns ORM queries and transaction boundaries.
+- The built React application is served by FastAPI, so the portfolio can run as one application endpoint.
+- SQLite data and model files live under the mounted `data/` directory so they persist outside the container.
 
-#### ✅ 方案 A：使用 NVIDIA GPU (建議)
+## Data model and backend decisions
 
-* **適用**：RTX 3060, 4090 等 NVIDIA 顯卡。
-* **設定**：保持預設即可，確認 `args` 為 `gpu` 且保留 `deploy` 區塊。
+```mermaid
+erDiagram
+    CATEGORY ||--o{ FINANCE_LOG : classifies
 
-```yaml
-services:
-  finance-ai:
-    build:
-      args:
-        DEVICE: gpu  # 啟用 CUDA 支援
-    deploy:          # 保留此區塊以調用顯卡
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+    CATEGORY {
+        int id PK
+        string name UK
+        Direction default_type
+    }
 
+    FINANCE_LOG {
+        int id PK
+        int category_id FK
+        Direction actual_type
+        float amount
+        string note
+        datetime timestamp
+    }
 ```
 
-#### ⚠️ 方案 B：使用 CPU (無顯卡/Mac 用戶)
+### Default direction versus actual direction
 
-* **適用**：Intel/AMD 內顯、Mac M1/M2/M3、無 NVIDIA 顯卡環境。
-* **設定**：修改 `docker-compose.yml`，將 `DEVICE` 改為 `cpu` 並**刪除** `deploy` 區塊。
+The most important modeling decision is storing direction in two different contexts:
 
-```yaml
-services:
-  finance-ai:
-    build:
-      args:
-        DEVICE: cpu  # 改為 cpu
-    # 注意：請刪除整個 deploy 區塊，否則會報錯
+- `Category.default_type` captures the normal behavior of a category, such as treating “Food” as an expense.
+- `FinanceLog.actual_type` preserves what happened in a specific transaction.
 
+This reduces input friction because selecting a category can automatically supply its usual direction, while exceptions remain possible. A restaurant refund can be recorded as income without changing the category default, and later category changes do not rewrite the meaning of historical transactions.
+
+### Validation and consistency
+
+- Categories use unique names and a constrained `Direction` enum.
+- Transactions require an existing category, a positive numeric amount, and valid optional values.
+- The service layer converts ORM objects into stable API-friendly dictionaries.
+- Write operations commit on success and roll back on failure.
+- Filtered queries support direction, category, amount range, date range, note keyword, sorting, and limits.
+
+This design is intentionally small: it favors an understandable personal-finance domain model over accounting features such as multiple currencies, ledgers, reconciliation, or multi-user ownership.
+
+## UI/UX decisions
+
+- **Overview before detail:** the Dashboard answers “How am I doing this month?” before exposing individual records.
+- **Progressive control:** common monthly actions stay visible, while advanced filters and model settings live in dedicated workspaces.
+- **Defaults with exceptions:** category defaults reduce repetitive input without preventing corrections or refunds.
+- **Safe batch operations:** selection state, a persistent action bar, and confirmation dialogs make large edits visible before execution.
+- **AI as an explicit action:** advice is generated only when requested, with loading, success, empty-data, and error states.
+- **Editable analysis intent:** users can provide a temporary focus for one analysis without permanently changing the default system prompt.
+
+## Local LLM integration
+
+FinBase uses `llama-cpp-python` to run a local GGUF instruction model. The integration is designed as a product pipeline rather than a general-purpose chat interface.
+
+```mermaid
+flowchart LR
+    Range["Selected date range"] --> Query["Query finance records"]
+    Query --> Metrics["Deterministic calculations"]
+    Metrics --> Report["Structured analysis report"]
+    Report --> Prompt["Controlled prompt assembly"]
+    Focus["Default or custom analysis focus"] --> Prompt
+    Prompt --> Load["Load local GGUF model"]
+    Load --> Infer["Generate financial advice"]
+    Infer --> Success["Advice response"]
+    Infer -->|exception| Error["Explicit error response"]
+    Success --> Release["Release model reference and collect memory"]
+    Error --> Release
 ```
 
-### 3. 啟動服務
-> [!WARNING]
->　執行docker指令時確保docker應用有在運行
-```powershell
-# --build 確保依照您的 GPU/CPU 設定重新建置映像檔
+### Model input
+
+The model receives a compact report containing:
+
+- total income, total expense, net savings, and savings rate;
+- expense totals and percentages by category;
+- transactions above twice the average expense;
+- high-frequency expense categories;
+- the default system prompt or a request-specific focus.
+
+### Model output and lifecycle
+
+The output is concise Traditional Chinese financial guidance rendered by the frontend as Markdown. Temperature, token limit, context size, thread count, model path, and the default system prompt are configuration-driven.
+
+The model is loaded when advice is requested and released afterward. This reduces persistent memory use on a local machine, at the cost of higher latency for every generation.
+
+If there is no data, the API returns an explicit message without loading the model. If inference fails, it returns an error response; the current version does not provide a rule-based advice fallback.
+
+## Docker execution
+
+Docker packages the API, built frontend, SQLite access, Local LLM dependencies, model download bootstrap, and persistent data paths. The first start downloads the configured GGUF model (approximately 5.8 GB), so startup time depends on network speed and storage performance.
+
+```bash
+git clone https://github.com/TW-RF54732/FinBase.git
+cd FinBase
 docker compose up --build
-
 ```
 
----
+The current Compose file builds the CUDA dependency profile and requests an NVIDIA device. For a CPU-only environment, change the Docker build argument to `DEVICE: cpu` and remove the NVIDIA device reservation before building.
 
-## 📂 資料與模型配置說明
+> The CUDA image and device reservation are prepared, but `N_GPU_LAYERS` is not yet connected to the model constructor. The current code therefore does not claim active GPU layer offloading.
 
-本系統所有持久化資料皆位於專案根目錄的 `/data` 資料夾，並掛載至容器內的 `/app/data`。
+- Application: `http://localhost:8000`
+- Health check: `http://localhost:8000/api/health`
+- Demo credentials: `test` / `test`
 
-### 1. 資料夾結構
+For native Python setup and additional environment notes, see [Manual Setup](manualDownload.md).
 
-系統啟動時會自動檢查，若對應資料夾不存在會自動建立，但建議保持以下結構：
+## Technical tradeoffs and current limitations
 
-```text
-/Personal-Finance-Manager
-└── /data          # Docker掛載子資料夾於容器中的/app/data
-    ├── /DB        # 存放 SQLite 資料庫 (Finance.db)
-    └── /models    # 存放 GGUF 模型檔
+| Decision | Benefit | Cost or limitation |
+| --- | --- | --- |
+| Local GGUF inference | Financial records do not need to be sent to a hosted model provider | Requires a large model download and hardware-dependent inference time |
+| Deterministic analysis before generation | Totals and ratios remain reproducible and inspectable | Advice quality still depends on the selected model and prompt |
+| Load the model per request | Releases memory after analysis | Adds model-loading latency to each request |
+| SQLite persistence | Simple, portable, and appropriate for a local portfolio product | No multi-user concurrency or production database operations |
+| Single-container delivery | Reproducible demonstration with a small operational surface | Not a horizontally scalable deployment architecture |
 
-```
-* **關於資料庫 (`/data/DB`)**：
-* 系統會自動在 `/data/DB/` 下建立資料庫檔案。
-* **注意**：若您手動修改設定檔，請確保路徑指向 `/app/data/DB/您的檔名.db`。
+Additional boundaries:
 
+- The login screen is a client-side demo gate using fixed credentials, not secure authentication.
+- The application is designed for one local user and has no account isolation or authorization model.
+- CORS is permissive for development.
+- AI failures return an error instead of falling back to deterministic advice.
+- CUDA dependencies are packaged, but runtime GPU layer offloading is not currently wired.
+- The repository does not currently include an automated CI workflow or a full automated test suite.
+- The system is a portfolio demonstration, not financial, investment, tax, or legal advice.
 
+## Technology stack
 
-### 2. 模型管理 (自動 vs 手動)
-
-####  自動下載 (預設)
-
-容器初次啟動時，若 `/data/models` 為空，腳本會自動從 HuggingFace 下載 `Llama-3-Taiwan-8B-Instruct` 模型 (約 5.8GB)。
-
-* **優點**：完全自動，無需操作。
-* **缺點**：需等待下載完成，依網速約 5-10 分鐘。
-
-#### 🛠️ 手動放入模型
-
-若您已有模型檔案，或想使用其他 GGUF 模型：
-
-1. 將 `.gguf` 檔案放入宿主機的 `data/models/` 資料夾。
-2. 前往 Web UI 設定頁面，或修改 `config.py` (需重啟容器)，將模型路徑指向：
-`/app/data/models/您的模型檔名.gguf`
-
----
-
-## 🔗 非 Docker 安裝 (開發者用)
-
-若您需要在本機直接運行 Python 環境進行開發，或不使用 Docker，請參閱詳細的手動安裝文件：
-
-👉 **[點擊查看：手動安裝與環境配置指南 (Manual Setup)](https://github.com/TW-RF54732/Personal-Finance-Manager/blob/main/manualDownload.md)**
-
----
-# 測試
-目前是測試版，登入帳密皆為'test'
-
-
-## 📝 常見問題 (FAQ)
-
-* **Q: 啟動後看到 `401 Unauthorized` 錯誤？**
-* **A**: 這通常是因為 Repo ID 錯誤或模型被設為私有。目前預設使用公開的 `chienweichang/Llama-3-Taiwan-8B-Instruct-GGUF`，無需 Token。
-
-
-* **Q: 修改了 `config.py` 或 `docker-compose.yml` 但沒生效？**
-* **A**: 請務必執行 `docker compose up --build` 來強制重新建置與載入設定。
-
-
-* **Q: 資料庫連線失敗 `unable to open database file`？**
-* **A**: 請檢查 SQLAlchemy 的 URL 是否為絕對路徑且包含 4 個斜線：`sqlite:////app/data/DB/Finance.db`。
+| Area | Technology |
+| --- | --- |
+| Frontend | React 19, Vite, Tailwind CSS, Radix UI, TanStack Table, Recharts |
+| API | FastAPI, Pydantic |
+| Data and analysis | SQLAlchemy, SQLite, pandas |
+| Local AI | llama-cpp-python, GGUF instruction model |
+| Delivery | Docker, Docker Compose, Uvicorn |
