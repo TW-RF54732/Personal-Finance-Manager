@@ -4,7 +4,7 @@
 
 FinBase is an end-to-end portfolio project I independently designed and implemented to demonstrate product thinking, full-stack engineering, data modeling, Local LLM integration, UI/UX design, and containerized delivery.
 
-> **Project status:** FinBase is a single-user portfolio product and technical case study. It is not maintained as a public SaaS, reusable package, or production-ready financial service.
+> Designed and built a local-first personal finance system that combines deterministic financial analytics with privacy-preserving Local LLM assistance.
 
 ![FinBase dashboard showing monthly financial metrics, cumulative income and expense trends, and recent transactions](Docs/assets/readme/dashboard-overview.png)
 
