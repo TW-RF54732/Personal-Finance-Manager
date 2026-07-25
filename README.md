@@ -6,8 +6,6 @@ FinBase is an end-to-end portfolio project I independently designed and implemen
 
 > Designed and built a local-first personal finance system that combines deterministic financial analytics with privacy-preserving Local LLM assistance.
 
-![FinBase dashboard showing monthly financial metrics, cumulative income and expense trends, and recent transactions](Docs/assets/readme/dashboard-overview.png)
-
 ## What this project demonstrates
 
 - **End-to-end product ownership:** turning a financial-management use case into a working interface, API, data model, analysis pipeline, and executable environment.
