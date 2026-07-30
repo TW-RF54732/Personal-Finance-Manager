@@ -222,7 +222,7 @@ Additional boundaries:
 
 | Area | Technology |
 | --- | --- |
-| Frontend | React 19, Vite, Tailwind CSS, Radix UI, TanStack Table, Recharts |
+| Frontend | React 19, Vite, Tailwind CSS, Shadcn |
 | API | FastAPI, Pydantic |
 | Data and analysis | SQLAlchemy, SQLite, pandas |
 | Local AI | llama-cpp-python, GGUF instruction model |
